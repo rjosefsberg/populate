@@ -3,18 +3,19 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import AddEntityForm from "./AddEntityForm";
 
+const emptyAssociation = () => ({ entityId: '', label: '' });
+
 function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
     const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '' });
-    const [association, setAssociation] = useState({ entityId: '', label: '' });
+    const [associations, setAssociations] = useState([emptyAssociation()]);
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
-    const handleGenerate = (prompt, entityType, assoc) => {
+    const handleGenerate = (prompt, entityType) => {
         return Promise.resolve(onGenerate(prompt, entityType)).then(result => {
             setEntityContext({ prompt, entityType });
-            setAssociation(assoc ?? { entityId: '', label: '' });
             setPreview({ title: prompt, description: result.description });
             setHint('');
             setStep('preview');
@@ -32,7 +33,8 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
     };
 
     const handleConfirm = () => {
-        onConfirm(preview.title, preview.description, association.entityId ? association : null);
+        const validAssociations = associations.filter(a => a.entityId);
+        onConfirm(preview.title, preview.description, validAssociations);
         handleClose();
     };
 
@@ -40,9 +42,21 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
         setStep('form');
         setPreview({ title: '', description: '' });
         setEntityContext({ prompt: '', entityType: '' });
-        setAssociation({ entityId: '', label: '' });
+        setAssociations([emptyAssociation()]);
         setHint('');
         onHide();
+    };
+
+    const updateAssociation = (index, patch) => {
+        setAssociations(prev => prev.map((a, i) => i === index ? { ...a, ...patch } : a));
+    };
+
+    const addAssociation = () => {
+        setAssociations(prev => [...prev, emptyAssociation()]);
+    };
+
+    const removeAssociation = (index) => {
+        setAssociations(prev => prev.length === 1 ? [emptyAssociation()] : prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -75,7 +89,7 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                                 disabled={regenerating}
                             />
                         </div>
-                        <div className="d-flex gap-2 mb-2">
+                        <div className="d-flex gap-2 mb-3">
                             <input
                                 className="form-control form-control-sm"
                                 placeholder="Regeneration hint (e.g. make it darker, shorter…)"
@@ -95,27 +109,49 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                             </Button>
                         </div>
                         {entities.length > 0 && (
-                            <div className="d-flex gap-2">
-                                <select
-                                    className="form-control form-control-sm border-secondary"
-                                    value={association.entityId}
-                                    onChange={e => setAssociation(a => ({ ...a, entityId: e.target.value, label: e.target.value ? a.label : '' }))}
+                            <div>
+                                <label className="form-label fw-semibold">Associations</label>
+                                {associations.map((assoc, i) => (
+                                    <div key={i} className="d-flex gap-2 mb-2 align-items-center">
+                                        <select
+                                            className="form-select form-select-sm border-secondary"
+                                            value={assoc.entityId}
+                                            onChange={e => updateAssociation(i, { entityId: e.target.value, label: e.target.value ? assoc.label : '' })}
+                                            disabled={regenerating}
+                                        >
+                                            <option value="">No association</option>
+                                            {entities.map(e => (
+                                                <option key={e.id} value={e.id}>{e.title}</option>
+                                            ))}
+                                        </select>
+                                        {assoc.entityId && (
+                                            <input
+                                                className="form-control form-control-sm border-secondary"
+                                                placeholder="Describe the association…"
+                                                value={assoc.label}
+                                                onChange={e => updateAssociation(i, { label: e.target.value })}
+                                                disabled={regenerating}
+                                            />
+                                        )}
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            onClick={() => removeAssociation(i)}
+                                            disabled={regenerating}
+                                            style={{ whiteSpace: 'nowrap' }}
+                                        >
+                                            ✕
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
+                                    onClick={addAssociation}
                                     disabled={regenerating}
                                 >
-                                    <option value="">No association</option>
-                                    {entities.map(e => (
-                                        <option key={e.id} value={e.id}>{e.title}</option>
-                                    ))}
-                                </select>
-                                {association.entityId && (
-                                    <input
-                                        className="form-control form-control-sm border-secondary"
-                                        placeholder="Describe the association…"
-                                        value={association.label}
-                                        onChange={e => setAssociation(a => ({ ...a, label: e.target.value }))}
-                                        disabled={regenerating}
-                                    />
-                                )}
+                                    + Add association
+                                </Button>
                             </div>
                         )}
                     </div>
