@@ -38,3 +38,21 @@ def register_routes(app):
         from app.services.entity_service import EntityService
         EntityService.delete(entity_id)
         return jsonify({"message": "Entity deleted"}), 200
+
+    @app.route("/api/entities/<int:entity_id>/associations", methods=["GET"])
+    def get_associations(entity_id):
+        from app.services.association_service import AssociationService
+        return jsonify(AssociationService.get_for_entity(entity_id))
+
+    @app.route("/api/associations", methods=["POST"])
+    def create_association():
+        from app.services.association_service import AssociationService
+        data = request.get_json()
+        assoc = AssociationService.create(data)
+        return jsonify(assoc), 201
+
+    @app.route("/api/associations/<int:association_id>", methods=["DELETE"])
+    def delete_association(association_id):
+        from app.services.association_service import AssociationService
+        AssociationService.delete(association_id)
+        return jsonify({"message": "Association deleted"}), 200
