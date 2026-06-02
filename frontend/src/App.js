@@ -73,6 +73,7 @@ function App() {
                 ) : (
                     <EntityDetail
                         entity={selectedEntity}
+                        entities={entities}
                         onEdit={setEditingEntity}
                         onDelete={handleDelete}
                     />
