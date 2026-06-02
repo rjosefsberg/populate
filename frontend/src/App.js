@@ -2,7 +2,8 @@ import {useState, useEffect} from "react";
 import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
 import EditEntityForm from "./components/EditEntityForm";
-import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity, createAssociation} from "./api/entities";
+import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity} from "./api/entities";
+import {createAssociation} from "./api/associations";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
@@ -24,12 +25,14 @@ function App() {
     const handleConfirm = (title, description, associations) => {
         createEntity({ title, body: description })
             .then(newEntity => {
-                setEntities(prev => [...prev, newEntity]);
-                setSelectedEntity(newEntity);
                 const valid = (associations || []).filter(a => a.entityId);
                 return Promise.all(
-                    valid.map(a => createAssociation(newEntity.id, Number(a.entityId), a.label || ''))
-                );
+                    valid.map(a => createAssociation({ entity_id_1: newEntity.id, entity_id_2: Number(a.entityId), description: a.label || '' }))
+                ).then(savedAssocs => {
+                    const entityWithAssocs = { ...newEntity, associations: savedAssocs };
+                    setEntities(prev => [...prev, entityWithAssocs]);
+                    setSelectedEntity(entityWithAssocs);
+                });
             });
     };
 

@@ -25,9 +25,3 @@ export const generateEntity = (entity_type, prompt, hint = null) =>
         body: JSON.stringify({ entity_type, prompt, ...(hint ? { hint } : {}) })
     }).then(res => res.json());
 
-export const createAssociation = (entity_id_1, entity_id_2, description) =>
-    fetch("/api/associations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_id_1, entity_id_2, description })
-    }).then(res => res.json());
