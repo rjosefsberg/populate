@@ -2,7 +2,7 @@ import {useState, useEffect} from "react";
 import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
 import EditEntityForm from "./components/EditEntityForm";
-import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity} from "./api/entities";
+import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity, createAssociation} from "./api/entities";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
@@ -21,19 +21,15 @@ function App() {
         return generateEntity(entityType, prompt, hint);
     };
 
-    const handleConfirm = (title, description, association) => {
-        let body = description;
-        if (association) {
-            const related = entities.find(e => String(e.id) === String(association.entityId));
-            if (related) {
-                const label = association.label ? ` — ${association.label}` : '';
-                body = `${description}\n\nAssociation: ${related.title}${label}`;
-            }
-        }
-        createEntity({title, body})
+    const handleConfirm = (title, description, associations) => {
+        createEntity({ title, body: description })
             .then(newEntity => {
                 setEntities(prev => [...prev, newEntity]);
                 setSelectedEntity(newEntity);
+                const valid = (associations || []).filter(a => a.entityId);
+                return Promise.all(
+                    valid.map(a => createAssociation(newEntity.id, Number(a.entityId), a.label || ''))
+                );
             });
     };
 
