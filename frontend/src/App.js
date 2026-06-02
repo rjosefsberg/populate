@@ -46,10 +46,16 @@ function App() {
     const handleSave = (id, title, body) => {
         updateEntity(id, {title, body})
             .then(updated => {
-                setEntities(prev => prev.map(e => e.id === id ? updated : e));
-                setSelectedEntity(updated);
+                const withAssocs = { ...updated, associations: editingEntity?.associations || [] };
+                setEntities(prev => prev.map(e => e.id === id ? withAssocs : e));
+                setSelectedEntity(withAssocs);
                 setEditingEntity(null);
             });
+    };
+
+    const handleAssociationsChange = (updatedEntity) => {
+        setEntities(prev => prev.map(e => e.id === updatedEntity.id ? updatedEntity : e));
+        setEditingEntity(updatedEntity);
     };
 
     return (
@@ -74,14 +80,15 @@ function App() {
                     <div className="p-4">
                         <EditEntityForm
                             entity={editingEntity}
+                            entities={entities}
                             onSave={handleSave}
                             onCancel={() => setEditingEntity(null)}
+                            onAssociationsChange={handleAssociationsChange}
                         />
                     </div>
                 ) : (
                     <EntityDetail
                         entity={selectedEntity}
-                        entities={entities}
                         onEdit={setEditingEntity}
                         onDelete={handleDelete}
                     />
