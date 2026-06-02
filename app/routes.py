@@ -11,7 +11,7 @@ def register_routes(app):
     def generate_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
-        result = EntityService.generate(data["entity_type"], data["prompt"])
+        result = EntityService.generate(data["entity_type"], data["prompt"], data.get("hint"))
         return jsonify(result), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])

@@ -39,16 +39,18 @@ class EntityService:
         return entity.to_dict()
 
     @staticmethod
-    def generate(entity_type, prompt):
+    def generate(entity_type, prompt, hint=None):
         print('Generating description for ', entity_type, ':', prompt, '...')
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+        hint_line = f"\n    Additional instruction: {hint}" if hint else ""
 
         engineered_prompt = f"""You are a creative writer for a generic fantasy setting.
 
     You will be given an element type and a name. Your job is to write a concise three sentence description for that element that fits naturally into a fantasy world.
 
     Element type: {entity_type}
-    Element name: {prompt}
+    Element name: {prompt}{hint_line}
 
     Rules:
     - Write exactly three sentences

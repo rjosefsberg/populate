@@ -18,9 +18,9 @@ export const updateEntity = (id, data) =>
 export const deleteEntity = (id) =>
     fetch(`/api/entities/${id}`, { method: "DELETE" });
 
-export const generateEntity = (entity_type, prompt) =>
+export const generateEntity = (entity_type, prompt, hint = null) =>
     fetch("/api/entities/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_type, prompt })
+        body: JSON.stringify({ entity_type, prompt, ...(hint ? { hint } : {}) })
     }).then(res => res.json());

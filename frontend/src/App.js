@@ -1,9 +1,7 @@
 import {useState, useEffect} from "react";
 import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
-import AddEntityForm from "./components/AddEntityForm";
 import EditEntityForm from "./components/EditEntityForm";
-import PreviewCard from "./components/PreviewCard";
 import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity} from "./api/entities";
 import Button from "react-bootstrap/Button";
 import React from "react";
@@ -13,35 +11,22 @@ function App() {
     const [entities, setEntities] = useState([]);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [pendingTitle, setPendingTitle] = useState("");
     const [modalShow, setModalShow] = React.useState(false);
+
     useEffect(() => {
         getEntities().then(data => setEntities(data));
     }, []);
 
-
-    const handleAdd = (prompt, entityType) => {
-        generateEntity(entityType, prompt)
-            .then(result => {
-                setPreview({title: prompt, description: result.description});
-                setPendingTitle(prompt);
-            });
+    const handleGenerate = (prompt, entityType, hint = null) => {
+        return generateEntity(entityType, prompt, hint);
     };
 
-    const handleConfirm = () => {
-        createEntity({title: pendingTitle, body: preview.description})
+    const handleConfirm = (title, description) => {
+        createEntity({title, body: description})
             .then(newEntity => {
                 setEntities(prev => [...prev, newEntity]);
                 setSelectedEntity(newEntity);
-                setPreview(null);
-                setPendingTitle("");
             });
-    };
-
-    const handleDiscard = () => {
-        setPreview(null);
-        setPendingTitle("");
     };
 
     const handleDelete = (id) => {
@@ -52,7 +37,7 @@ function App() {
     };
 
     const handleSave = (id, title, body) => {
-        updateEntity(id, {title, body: body})
+        updateEntity(id, {title, body})
             .then(updated => {
                 setEntities(prev => prev.map(e => e.id === id ? updated : e));
                 setSelectedEntity(updated);
@@ -60,38 +45,24 @@ function App() {
             });
     };
 
-    const createClick = () => {
-        console.log("Create button clicked");
-        setModalShow(true);
-
-    }
-
     return (
-
         <div className="d-flex">
-            <AddEntityModal show={modalShow} onHide={() => setModalShow(false)}></AddEntityModal>
+            <AddEntityModal
+                show={modalShow}
+                onHide={() => setModalShow(false)}
+                onGenerate={handleGenerate}
+                onConfirm={handleConfirm}
+            />
             <Sidebar
                 entities={entities}
                 selectedId={selectedEntity?.id}
                 onSelect={setSelectedEntity}
             >
-                {/*<AddEntityForm onAdd={handleAdd} />*/}
-
-                <Button variant="primary" onClick={createClick}>Create</Button>
+                <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
             </Sidebar>
 
             <div className="flex-grow-1">
-                {preview && (
-                    <div className="p-4">
-                        <PreviewCard
-                            preview={preview}
-                            onConfirm={handleConfirm}
-                            onDiscard={handleDiscard}
-                        />
-                    </div>
-                )}
-
-                {!preview && editingEntity && (
+                {editingEntity ? (
                     <div className="p-4">
                         <EditEntityForm
                             entity={editingEntity}
@@ -99,9 +70,7 @@ function App() {
                             onCancel={() => setEditingEntity(null)}
                         />
                     </div>
-                )}
-
-                {!preview && !editingEntity && (
+                ) : (
                     <EntityDetail
                         entity={selectedEntity}
                         onEdit={setEditingEntity}
