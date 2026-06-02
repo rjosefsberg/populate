@@ -3,13 +3,13 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import AddEntityForm from "./AddEntityForm";
 
-const emptyAssociation = () => ({ entityId: '', label: '' });
-
 function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
     const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '' });
-    const [associations, setAssociations] = useState([emptyAssociation()]);
+    const [associations, setAssociations] = useState([]);
+    const [newTargetId, setNewTargetId] = useState('');
+    const [newDescription, setNewDescription] = useState('');
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
@@ -32,9 +32,19 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
             .finally(() => setRegenerating(false));
     };
 
+    const handleAddAssociation = () => {
+        if (!newTargetId) return;
+        setAssociations(prev => [...prev, { entityId: newTargetId, label: newDescription.trim() }]);
+        setNewTargetId('');
+        setNewDescription('');
+    };
+
+    const handleRemoveAssociation = (index) => {
+        setAssociations(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleConfirm = () => {
-        const validAssociations = associations.filter(a => a.entityId);
-        onConfirm(preview.title, preview.description, validAssociations);
+        onConfirm(preview.title, preview.description, associations);
         handleClose();
     };
 
@@ -42,21 +52,11 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
         setStep('form');
         setPreview({ title: '', description: '' });
         setEntityContext({ prompt: '', entityType: '' });
-        setAssociations([emptyAssociation()]);
+        setAssociations([]);
+        setNewTargetId('');
+        setNewDescription('');
         setHint('');
         onHide();
-    };
-
-    const updateAssociation = (index, patch) => {
-        setAssociations(prev => prev.map((a, i) => i === index ? { ...a, ...patch } : a));
-    };
-
-    const addAssociation = () => {
-        setAssociations(prev => [...prev, emptyAssociation()]);
-    };
-
-    const removeAssociation = (index) => {
-        setAssociations(prev => prev.length === 1 ? [emptyAssociation()] : prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -111,47 +111,59 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                         {entities.length > 0 && (
                             <div>
                                 <label className="form-label fw-semibold">Associations</label>
-                                {associations.map((assoc, i) => (
-                                    <div key={i} className="d-flex gap-2 mb-2 align-items-center">
-                                        <select
-                                            className="form-select form-select-sm border-secondary"
-                                            value={assoc.entityId}
-                                            onChange={e => updateAssociation(i, { entityId: e.target.value, label: e.target.value ? assoc.label : '' })}
-                                            disabled={regenerating}
-                                        >
-                                            <option value="">No association</option>
-                                            {entities.map(e => (
-                                                <option key={e.id} value={e.id}>{e.title}</option>
-                                            ))}
-                                        </select>
-                                        {assoc.entityId && (
-                                            <input
-                                                className="form-control form-control-sm border-secondary"
-                                                placeholder="Describe the association…"
-                                                value={assoc.label}
-                                                onChange={e => updateAssociation(i, { label: e.target.value })}
-                                                disabled={regenerating}
-                                            />
-                                        )}
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => removeAssociation(i)}
-                                            disabled={regenerating}
-                                            style={{ whiteSpace: 'nowrap' }}
-                                        >
-                                            ✕
-                                        </Button>
-                                    </div>
-                                ))}
-                                <Button
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    onClick={addAssociation}
-                                    disabled={regenerating}
-                                >
-                                    + Add association
-                                </Button>
+                                {associations.length > 0 && (
+                                    <ul className="list-group list-group-flush mb-2">
+                                        {associations.map((assoc, i) => {
+                                            const linked = entities.find(e => String(e.id) === String(assoc.entityId));
+                                            return (
+                                                <li key={i} className="list-group-item px-0 py-2 d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <span className="fw-semibold me-2">{linked?.title}</span>
+                                                        {assoc.label && <span className="text-muted">{assoc.label}</span>}
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-link btn-sm text-danger p-0 ms-3"
+                                                        onClick={() => handleRemoveAssociation(i)}
+                                                        disabled={regenerating}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                                <div className="d-flex gap-2 align-items-center">
+                                    <select
+                                        className="form-select form-select-sm"
+                                        style={{ maxWidth: 200 }}
+                                        value={newTargetId}
+                                        onChange={e => setNewTargetId(e.target.value)}
+                                        disabled={regenerating}
+                                    >
+                                        <option value="">Link to…</option>
+                                        {entities.map(e => (
+                                            <option key={e.id} value={e.id}>{e.title}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        className="form-control form-control-sm"
+                                        placeholder="Describe the relationship…"
+                                        value={newDescription}
+                                        onChange={e => setNewDescription(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && !regenerating && newTargetId && handleAddAssociation()}
+                                        disabled={regenerating}
+                                    />
+                                    <Button
+                                        variant="outline-secondary"
+                                        size="sm"
+                                        onClick={handleAddAssociation}
+                                        disabled={regenerating || !newTargetId}
+                                        style={{ whiteSpace: 'nowrap' }}
+                                    >
+                                        + Add
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
