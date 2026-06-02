@@ -79,14 +79,14 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
 function AddEntityModal({ show, onHide, onGenerate, onConfirm, entities = [] }) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
-    const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '' });
+    const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '', genre: 'fantasy' });
     const [associations, setAssociations] = useState([]);
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
-    const handleGenerate = (prompt, entityType) => {
-        return Promise.resolve(onGenerate(prompt, entityType)).then(result => {
-            setEntityContext({ prompt, entityType });
+    const handleGenerate = (prompt, entityType, genre) => {
+        return Promise.resolve(onGenerate(prompt, entityType, genre)).then(result => {
+            setEntityContext({ prompt, entityType, genre });
             setPreview({ title: prompt, description: result.description });
             setHint('');
             setStep('preview');
@@ -95,7 +95,7 @@ function AddEntityModal({ show, onHide, onGenerate, onConfirm, entities = [] }) 
 
     const handleRegenerate = () => {
         setRegenerating(true);
-        Promise.resolve(onGenerate(entityContext.prompt, entityContext.entityType, hint.trim() || null))
+        Promise.resolve(onGenerate(entityContext.prompt, entityContext.entityType, entityContext.genre, hint.trim() || null))
             .then(result => {
                 setPreview(p => ({ ...p, description: result.description }));
                 setHint('');
