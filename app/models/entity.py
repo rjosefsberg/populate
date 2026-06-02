@@ -9,10 +9,18 @@ class Entity(db.Model):
     body = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    associations_as_1 = db.relationship("Association", foreign_keys="Association.entity_id_1", back_populates="entity_1", cascade="all, delete-orphan")
+    associations_as_2 = db.relationship("Association", foreign_keys="Association.entity_id_2", back_populates="entity_2", cascade="all, delete-orphan")
+
+    @property
+    def associations(self):
+        return self.associations_as_1 + self.associations_as_2
+
     def to_dict(self):
         return {
             "id": self.id,
             "title": self.title,
             "body": self.body,
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
+            "associations": [a.to_dict() for a in self.associations]
         }

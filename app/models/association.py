@@ -10,8 +10,8 @@ class Association(db.Model):
     description = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    entity_1 = db.relationship("Entity", foreign_keys=[entity_id_1])
-    entity_2 = db.relationship("Entity", foreign_keys=[entity_id_2])
+    entity_1 = db.relationship("Entity", foreign_keys=[entity_id_1], back_populates="associations_as_1")
+    entity_2 = db.relationship("Entity", foreign_keys=[entity_id_2], back_populates="associations_as_2")
 
     def to_dict(self):
         return {
