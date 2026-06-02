@@ -3,16 +3,18 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import AddEntityForm from "./AddEntityForm";
 
-function AddEntityModal({show, onHide, onGenerate, onConfirm}) {
+function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
     const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '' });
+    const [association, setAssociation] = useState({ entityId: '', label: '' });
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
-    const handleGenerate = (prompt, entityType) => {
+    const handleGenerate = (prompt, entityType, assoc) => {
         return Promise.resolve(onGenerate(prompt, entityType)).then(result => {
             setEntityContext({ prompt, entityType });
+            setAssociation(assoc ?? { entityId: '', label: '' });
             setPreview({ title: prompt, description: result.description });
             setHint('');
             setStep('preview');
@@ -30,7 +32,7 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm}) {
     };
 
     const handleConfirm = () => {
-        onConfirm(preview.title, preview.description);
+        onConfirm(preview.title, preview.description, association.entityId ? association : null);
         handleClose();
     };
 
@@ -38,18 +40,19 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm}) {
         setStep('form');
         setPreview({ title: '', description: '' });
         setEntityContext({ prompt: '', entityType: '' });
+        setAssociation({ entityId: '', label: '' });
         setHint('');
         onHide();
     };
 
     return (
-        <Modal show={show} onHide={regenerating ? undefined : handleClose} animation={false} size="lg">
+        <Modal show={show} onHide={handleClose} backdrop="static" animation={false} size="lg">
             <Modal.Header closeButton>
                 <Modal.Title>{step === 'form' ? 'Create Entity' : 'Preview'}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {step === 'form' && (
-                    <AddEntityForm onAdd={handleGenerate} />
+                    <AddEntityForm onAdd={handleGenerate} entities={entities} />
                 )}
                 {step === 'preview' && (
                     <div>
@@ -72,7 +75,7 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm}) {
                                 disabled={regenerating}
                             />
                         </div>
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-2 mb-2">
                             <input
                                 className="form-control form-control-sm"
                                 placeholder="Regeneration hint (e.g. make it darker, shorter…)"
@@ -91,6 +94,30 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm}) {
                                 {regenerating ? 'Generating…' : 'Regenerate'}
                             </Button>
                         </div>
+                        {entities.length > 0 && (
+                            <div className="d-flex gap-2">
+                                <select
+                                    className="form-control form-control-sm border-secondary"
+                                    value={association.entityId}
+                                    onChange={e => setAssociation(a => ({ ...a, entityId: e.target.value, label: e.target.value ? a.label : '' }))}
+                                    disabled={regenerating}
+                                >
+                                    <option value="">No association</option>
+                                    {entities.map(e => (
+                                        <option key={e.id} value={e.id}>{e.title}</option>
+                                    ))}
+                                </select>
+                                {association.entityId && (
+                                    <input
+                                        className="form-control form-control-sm border-secondary"
+                                        placeholder="Describe the association…"
+                                        value={association.label}
+                                        onChange={e => setAssociation(a => ({ ...a, label: e.target.value }))}
+                                        disabled={regenerating}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal.Body>

@@ -21,8 +21,16 @@ function App() {
         return generateEntity(entityType, prompt, hint);
     };
 
-    const handleConfirm = (title, description) => {
-        createEntity({title, body: description})
+    const handleConfirm = (title, description, association) => {
+        let body = description;
+        if (association) {
+            const related = entities.find(e => String(e.id) === String(association.entityId));
+            if (related) {
+                const label = association.label ? ` — ${association.label}` : '';
+                body = `${description}\n\nAssociation: ${related.title}${label}`;
+            }
+        }
+        createEntity({title, body})
             .then(newEntity => {
                 setEntities(prev => [...prev, newEntity]);
                 setSelectedEntity(newEntity);
@@ -52,6 +60,7 @@ function App() {
                 onHide={() => setModalShow(false)}
                 onGenerate={handleGenerate}
                 onConfirm={handleConfirm}
+                entities={entities}
             />
             <Sidebar
                 entities={entities}
