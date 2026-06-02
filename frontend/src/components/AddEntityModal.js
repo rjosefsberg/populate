@@ -3,13 +3,84 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import AddEntityForm from "./AddEntityForm";
 
-function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
+const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
+
+function AssociationRows({ associations, entities, onChange, disabled }) {
+    const updateRow = (i, patch) => {
+        onChange(associations.map((a, idx) => idx === i ? { ...a, ...patch } : a));
+    };
+    const removeRow = (i) => {
+        onChange(associations.filter((_, idx) => idx !== i));
+    };
+    const addRow = () => {
+        onChange([...associations, { entityId: '', label: '' }]);
+    };
+
+    return (
+        <div>
+            <p className="text-uppercase fw-semibold mb-2" style={labelStyle}>Associations</p>
+
+            {associations.length > 0 && (
+                <div className="mb-2">
+                    <div className="row g-2 mb-1">
+                        <div className="col-5">
+                            <span className="text-uppercase fw-semibold" style={{ ...labelStyle, fontSize: '0.65rem' }}>Entity</span>
+                        </div>
+                        <div className="col-6">
+                            <span className="text-uppercase fw-semibold" style={{ ...labelStyle, fontSize: '0.65rem' }}>Description</span>
+                        </div>
+                    </div>
+                    {associations.map((assoc, i) => (
+                        <div key={i} className="row g-2 mb-2 align-items-center">
+                            <div className="col-5">
+                                <select
+                                    className="form-select form-select-sm"
+                                    value={assoc.entityId}
+                                    onChange={e => updateRow(i, { entityId: e.target.value })}
+                                    disabled={disabled}
+                                >
+                                    <option value="">Select entity…</option>
+                                    {entities.map(e => (
+                                        <option key={e.id} value={e.id}>{e.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="col-6">
+                                <input
+                                    className="form-control form-control-sm"
+                                    placeholder="Describe the relationship…"
+                                    value={assoc.label}
+                                    onChange={e => updateRow(i, { label: e.target.value })}
+                                    disabled={disabled}
+                                />
+                            </div>
+                            <div className="col-1 text-center">
+                                <button
+                                    className="btn btn-link btn-sm text-danger p-0"
+                                    onClick={() => removeRow(i)}
+                                    disabled={disabled}
+                                    type="button"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <Button variant="outline-secondary" size="sm" onClick={addRow} disabled={disabled} type="button">
+                + Add association
+            </Button>
+        </div>
+    );
+}
+
+function AddEntityModal({ show, onHide, onGenerate, onConfirm, entities = [] }) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
     const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '' });
     const [associations, setAssociations] = useState([]);
-    const [newTargetId, setNewTargetId] = useState('');
-    const [newDescription, setNewDescription] = useState('');
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
@@ -32,19 +103,8 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
             .finally(() => setRegenerating(false));
     };
 
-    const handleAddAssociation = () => {
-        if (!newTargetId) return;
-        setAssociations(prev => [...prev, { entityId: newTargetId, label: newDescription.trim() }]);
-        setNewTargetId('');
-        setNewDescription('');
-    };
-
-    const handleRemoveAssociation = (index) => {
-        setAssociations(prev => prev.filter((_, i) => i !== index));
-    };
-
     const handleConfirm = () => {
-        onConfirm(preview.title, preview.description, associations);
+        onConfirm(preview.title, preview.description, associations.filter(a => a.entityId));
         handleClose();
     };
 
@@ -53,8 +113,6 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
         setPreview({ title: '', description: '' });
         setEntityContext({ prompt: '', entityType: '' });
         setAssociations([]);
-        setNewTargetId('');
-        setNewDescription('');
         setHint('');
         onHide();
     };
@@ -62,16 +120,28 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
     return (
         <Modal show={show} onHide={handleClose} backdrop="static" animation={false} size="lg">
             <Modal.Header closeButton>
-                <Modal.Title>{step === 'form' ? 'Create Entity' : 'Preview'}</Modal.Title>
+                <Modal.Title className="fw-semibold">{step === 'form' ? 'Create Entity' : 'Preview'}</Modal.Title>
             </Modal.Header>
-            <Modal.Body>
+            <Modal.Body className="px-4 py-4">
                 {step === 'form' && (
-                    <AddEntityForm onAdd={handleGenerate} entities={entities} />
+                    <div>
+                        <AddEntityForm onAdd={handleGenerate} />
+                        {entities.length > 0 && (
+                            <div className="mt-4 pt-3 border-top">
+                                <AssociationRows
+                                    associations={associations}
+                                    entities={entities}
+                                    onChange={setAssociations}
+                                    disabled={false}
+                                />
+                            </div>
+                        )}
+                    </div>
                 )}
                 {step === 'preview' && (
                     <div>
                         <div className="mb-3">
-                            <label className="form-label fw-semibold">Title</label>
+                            <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Title</label>
                             <input
                                 className="form-control"
                                 value={preview.title}
@@ -80,7 +150,7 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                             />
                         </div>
                         <div className="mb-3">
-                            <label className="form-label fw-semibold">Description</label>
+                            <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Description</label>
                             <textarea
                                 className="form-control"
                                 rows={8}
@@ -89,7 +159,7 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                                 disabled={regenerating}
                             />
                         </div>
-                        <div className="d-flex gap-2 mb-3">
+                        <div className="d-flex gap-2 mb-4">
                             <input
                                 className="form-control form-control-sm"
                                 placeholder="Regeneration hint (e.g. make it darker, shorter…)"
@@ -109,73 +179,29 @@ function AddEntityModal({show, onHide, onGenerate, onConfirm, entities = []}) {
                             </Button>
                         </div>
                         {entities.length > 0 && (
-                            <div>
-                                <label className="form-label fw-semibold">Associations</label>
-                                {associations.length > 0 && (
-                                    <ul className="list-group list-group-flush mb-2">
-                                        {associations.map((assoc, i) => {
-                                            const linked = entities.find(e => String(e.id) === String(assoc.entityId));
-                                            return (
-                                                <li key={i} className="list-group-item px-0 py-2 d-flex justify-content-between align-items-start">
-                                                    <div>
-                                                        <span className="fw-semibold me-2">{linked?.title}</span>
-                                                        {assoc.label && <span className="text-muted">{assoc.label}</span>}
-                                                    </div>
-                                                    <button
-                                                        className="btn btn-link btn-sm text-danger p-0 ms-3"
-                                                        onClick={() => handleRemoveAssociation(i)}
-                                                        disabled={regenerating}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-                                <div className="d-flex gap-2 align-items-center">
-                                    <select
-                                        className="form-select form-select-sm"
-                                        style={{ maxWidth: 200 }}
-                                        value={newTargetId}
-                                        onChange={e => setNewTargetId(e.target.value)}
-                                        disabled={regenerating}
-                                    >
-                                        <option value="">Link to…</option>
-                                        {entities.map(e => (
-                                            <option key={e.id} value={e.id}>{e.title}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        className="form-control form-control-sm"
-                                        placeholder="Describe the relationship…"
-                                        value={newDescription}
-                                        onChange={e => setNewDescription(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && !regenerating && newTargetId && handleAddAssociation()}
-                                        disabled={regenerating}
-                                    />
-                                    <Button
-                                        variant="outline-secondary"
-                                        size="sm"
-                                        onClick={handleAddAssociation}
-                                        disabled={regenerating || !newTargetId}
-                                        style={{ whiteSpace: 'nowrap' }}
-                                    >
-                                        + Add
-                                    </Button>
-                                </div>
+                            <div className="pt-3 border-top">
+                                <AssociationRows
+                                    associations={associations}
+                                    entities={entities}
+                                    onChange={setAssociations}
+                                    disabled={regenerating}
+                                />
                             </div>
                         )}
                     </div>
                 )}
             </Modal.Body>
-            {step === 'preview' && (
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setStep('form')} disabled={regenerating}>Back</Button>
-                    <Button variant="danger" onClick={handleClose} disabled={regenerating}>Discard</Button>
-                    <Button variant="success" onClick={handleConfirm} disabled={regenerating}>Confirm</Button>
-                </Modal.Footer>
-            )}
+            <Modal.Footer>
+                {step === 'form' ? (
+                    <Button variant="outline-secondary" onClick={handleClose}>Cancel</Button>
+                ) : (
+                    <>
+                        <Button variant="outline-secondary" onClick={() => setStep('form')} disabled={regenerating}>Back</Button>
+                        <Button variant="danger" onClick={handleClose} disabled={regenerating}>Discard</Button>
+                        <Button variant="success" onClick={handleConfirm} disabled={regenerating}>Confirm</Button>
+                    </>
+                )}
+            </Modal.Footer>
         </Modal>
     );
 }
