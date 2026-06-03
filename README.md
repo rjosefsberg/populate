@@ -24,7 +24,7 @@ A fantasy world-building tool. Create characters, places, and items — the app 
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/rjosefsberg/populate.git
+git clone <your-repo-url>
 cd populate
 cp .env.example .env   # then fill in your values
 ```
@@ -127,8 +127,8 @@ In the AWS Console → EC2 → Key Pairs → Create. Download the `.pem` file.
 
 **3. Make the image public** (or configure a pull secret)
 
-The CI pushes to `ghcr.io/rjosefsberg/populate:latest`. By default GitHub packages are private. Either:
-- Go to `https://github.com/rjosefsberg/populate/pkgs/container/populate` and make it public, **or**
+The CI pushes to `ghcr.io/<your-github-username>/populate:latest`. By default GitHub packages are private. Either:
+- Go to your package at `https://github.com/<your-github-username>/populate/pkgs/container/populate` and make it public, **or**
 - Add a `GITHUB_TOKEN` to the user-data pull command (more complex — making it public is easier for a personal app)
 
 **4. Deploy**
@@ -160,7 +160,7 @@ Log in with `admin` / `admin` (or whatever you set `app_password` to).
 Push to `master` → CI builds and pushes a new image → SSH into the instance and run:
 
 ```bash
-docker pull ghcr.io/rjosefsberg/populate:latest
+docker pull ghcr.io/<your-github-username>/populate:latest
 docker stop populate && docker rm populate
 docker run -d \
   --name populate \
@@ -170,7 +170,7 @@ docker run -d \
   -e ANTHROPIC_API_KEY=your-key \
   -e SECRET_KEY=your-secret \
   -e APP_PASSWORD=your-password \
-  ghcr.io/rjosefsberg/populate:latest
+  ghcr.io/<your-github-username>/populate:latest
 ```
 
 ### Tearing down

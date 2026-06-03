@@ -37,5 +37,5 @@ variable "app_password" {
 variable "image" {
   description = "Docker image to run"
   type        = string
-  default     = "ghcr.io/rjosefsberg/populate:latest"
+  default     = "ghcr.io/<your-github-username>/populate:latest"
 }
