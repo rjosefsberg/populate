@@ -32,6 +32,6 @@ def auth_client(app, db):
     """Test client with an active session."""
     c = app.test_client()
     c.post("/api/auth/login",
-           json={"password": "test-password"},
+           json={"username": "anyone", "password": "test-password"},
            content_type="application/json")
     return c
