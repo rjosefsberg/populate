@@ -5,6 +5,8 @@ import AddEntityForm from "./AddEntityForm";
 
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 
+const colLabel = { ...labelStyle, fontSize: '0.65rem' };
+
 function AssociationRows({ associations, entities, onChange, disabled }) {
     const updateRow = (i, patch) => {
         onChange(associations.map((a, idx) => idx === i ? { ...a, ...patch } : a));
@@ -13,7 +15,7 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
         onChange(associations.filter((_, idx) => idx !== i));
     };
     const addRow = () => {
-        onChange([...associations, { entityId: '', label: '' }]);
+        onChange([...associations, { entityId: '', label: '', includeInPrompt: false }]);
     };
 
     return (
@@ -23,16 +25,13 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
             {associations.length > 0 && (
                 <div className="mb-2">
                     <div className="row g-2 mb-1">
-                        <div className="col-5">
-                            <span className="text-uppercase fw-semibold" style={{ ...labelStyle, fontSize: '0.65rem' }}>Entity</span>
-                        </div>
-                        <div className="col-6">
-                            <span className="text-uppercase fw-semibold" style={{ ...labelStyle, fontSize: '0.65rem' }}>Description</span>
-                        </div>
+                        <div className="col-4"><span className="text-uppercase fw-semibold" style={colLabel}>Entity</span></div>
+                        <div className="col-5"><span className="text-uppercase fw-semibold" style={colLabel}>Description</span></div>
+                        <div className="col-2 text-center"><span className="text-uppercase fw-semibold" style={colLabel}>In prompt</span></div>
                     </div>
                     {associations.map((assoc, i) => (
                         <div key={i} className="row g-2 mb-2 align-items-center">
-                            <div className="col-5">
+                            <div className="col-4">
                                 <select
                                     className="form-select form-select-sm"
                                     value={assoc.entityId}
@@ -45,13 +44,23 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
                                     ))}
                                 </select>
                             </div>
-                            <div className="col-6">
+                            <div className="col-5">
                                 <input
                                     className="form-control form-control-sm"
                                     placeholder="Describe the relationship…"
                                     value={assoc.label}
                                     onChange={e => updateRow(i, { label: e.target.value })}
                                     disabled={disabled}
+                                />
+                            </div>
+                            <div className="col-2 text-center">
+                                <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={assoc.includeInPrompt}
+                                    onChange={e => updateRow(i, { includeInPrompt: e.target.checked })}
+                                    disabled={disabled || !assoc.entityId}
+                                    title="Weave this relationship into the generated description"
                                 />
                             </div>
                             <div className="col-1 text-center">
@@ -79,14 +88,23 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
 function AddEntityModal({ show, onHide, onGenerate, onConfirm, entities = [] }) {
     const [step, setStep] = useState('form');
     const [preview, setPreview] = useState({ title: '', description: '' });
-    const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '', genre: 'fantasy' });
+    const [entityContext, setEntityContext] = useState({ prompt: '', entityType: '', genre: 'fantasy', promptAssociations: [] });
     const [associations, setAssociations] = useState([]);
     const [hint, setHint] = useState('');
     const [regenerating, setRegenerating] = useState(false);
 
+    const resolvePromptAssociations = () =>
+        associations
+            .filter(a => a.entityId && a.includeInPrompt)
+            .map(a => {
+                const entity = entities.find(e => String(e.id) === String(a.entityId));
+                return { title: entity?.title || '', description: a.label };
+            });
+
     const handleGenerate = (prompt, entityType, genre) => {
-        return Promise.resolve(onGenerate(prompt, entityType, genre)).then(result => {
-            setEntityContext({ prompt, entityType, genre });
+        const promptAssociations = resolvePromptAssociations();
+        return Promise.resolve(onGenerate(prompt, entityType, genre, null, promptAssociations)).then(result => {
+            setEntityContext({ prompt, entityType, genre, promptAssociations });
             setPreview({ title: prompt, description: result.description });
             setHint('');
             setStep('preview');
@@ -95,7 +113,7 @@ function AddEntityModal({ show, onHide, onGenerate, onConfirm, entities = [] }) 
 
     const handleRegenerate = () => {
         setRegenerating(true);
-        Promise.resolve(onGenerate(entityContext.prompt, entityContext.entityType, entityContext.genre, hint.trim() || null))
+        Promise.resolve(onGenerate(entityContext.prompt, entityContext.entityType, entityContext.genre, hint.trim() || null, entityContext.promptAssociations))
             .then(result => {
                 setPreview(p => ({ ...p, description: result.description }));
                 setHint('');
