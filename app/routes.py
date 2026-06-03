@@ -59,35 +59,36 @@ def register_routes(app):
 
     @app.route("/api/usage", methods=["GET"])
     def get_usage():
+        import logging
+        log = logging.getLogger(__name__)
         from app.services.usage_service import UsageService
-        import anthropic, os, requests as http
+        import anthropic, os
         api_key = os.environ.get("ANTHROPIC_API_KEY")
 
-        # Verify key is active
+        key_active = False
+        credits_remaining = None
+
         try:
             client = anthropic.Anthropic(api_key=api_key)
             client.models.list(limit=1)
             key_active = True
         except Exception:
-            key_active = False
+            log.exception("Key validation failed")
 
-        # Attempt to fetch remaining credits (available for some account types)
-        credits_remaining = None
         try:
-            resp = http.get(
+            import urllib.request, json as _json
+            req = urllib.request.Request(
                 "https://api.anthropic.com/v1/organizations/billing/credit_grants",
                 headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-                timeout=5,
             )
-            if resp.ok:
-                grants = resp.json().get("data", [])
-                # Sum unexpired grants
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                grants = _json.loads(resp.read()).get("data", [])
                 credits_remaining = sum(
                     g.get("remaining_amount", 0) for g in grants
                     if g.get("status") == "active"
                 )
         except Exception:
-            pass
+            log.debug("Credits endpoint unavailable (expected for most account types)")
 
         return jsonify({
             "key_active": key_active,
