@@ -2,6 +2,11 @@ from app import db
 from app.models import Entity
 import anthropic
 import os
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class EntityService:
 
@@ -74,23 +79,45 @@ class EntityService:
 
     @staticmethod
     def generate(entity_type, prompt, genre="fantasy", hint=None, prompt_associations=None):
-        print('Generating description for ', entity_type, ':', prompt, '(', genre, ')...')
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
         engineered_prompt = EntityService._build_prompt(
             entity_type, prompt, genre, prompt_associations or [], hint
         )
 
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": engineered_prompt}]
-        )
+        logger.debug("=== PROMPT ===\n%s\n==============", engineered_prompt)
+
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": engineered_prompt}]
+            )
+        except anthropic.APIError as e:
+            logger.error(
+                "Anthropic API error — status=%s body=%s",
+                getattr(e, 'status_code', '?'),
+                getattr(e, 'body', str(e)),
+                exc_info=True,
+            )
+            raise
 
         from app.services.usage_service import UsageService
         UsageService.record(message.usage)
 
-        import json
+        logger.debug(
+            "=== RESPONSE === stop_reason=%s usage=in:%d out:%d\n%s\n================",
+            message.stop_reason,
+            message.usage.input_tokens,
+            message.usage.output_tokens,
+            message.content[0].text,
+        )
+
         content = message.content[0].text
-        print(content)
-        return json.loads(content)
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            logger.error(
+                "JSON parse failed — full response content below:\n%s", content
+            )
+            raise
