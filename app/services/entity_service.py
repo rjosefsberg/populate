@@ -87,6 +87,9 @@ class EntityService:
             messages=[{"role": "user", "content": engineered_prompt}]
         )
 
+        from app.services.usage_service import UsageService
+        UsageService.record(message.usage)
+
         import json
         content = message.content[0].text
         print(content)

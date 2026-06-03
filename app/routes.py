@@ -56,3 +56,15 @@ def register_routes(app):
         from app.services.association_service import AssociationService
         AssociationService.delete(association_id)
         return jsonify({"message": "Association deleted"}), 200
+
+    @app.route("/api/usage", methods=["GET"])
+    def get_usage():
+        from app.services.usage_service import UsageService
+        import anthropic, os
+        try:
+            client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+            client.models.list(limit=1)
+            key_active = True
+        except Exception:
+            key_active = False
+        return jsonify({"key_active": key_active, **UsageService.get_stats()})
