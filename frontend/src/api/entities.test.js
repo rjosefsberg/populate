@@ -1,7 +1,11 @@
 import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from './entities';
 
 beforeEach(() => {
-    global.fetch = jest.fn();
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+    });
 });
 
 afterEach(() => {
@@ -10,6 +14,8 @@ afterEach(() => {
 
 function mockFetch(body) {
     global.fetch.mockResolvedValue({
+        ok: true,
+        status: 200,
         json: () => Promise.resolve(body),
     });
 }
@@ -19,7 +25,9 @@ describe('getEntities', () => {
         const data = [{ id: 1, title: 'Gandalf' }];
         mockFetch(data);
         const result = await getEntities();
-        expect(fetch).toHaveBeenCalledWith('/api/entities');
+        expect(fetch).toHaveBeenCalledWith('/api/entities', expect.objectContaining({
+            credentials: 'include',
+        }));
         expect(result).toEqual(data);
     });
 });
@@ -31,7 +39,7 @@ describe('createEntity', () => {
         const result = await createEntity(entity);
         expect(fetch).toHaveBeenCalledWith('/api/entities', expect.objectContaining({
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(entity),
         }));
         expect(result.title).toBe('Frodo');
@@ -45,6 +53,7 @@ describe('updateEntity', () => {
         const result = await updateEntity(42, updated);
         expect(fetch).toHaveBeenCalledWith('/api/entities/42', expect.objectContaining({
             method: 'PUT',
+            credentials: 'include',
             body: JSON.stringify(updated),
         }));
         expect(result.title).toBe('Frodo Updated');
@@ -53,9 +62,11 @@ describe('updateEntity', () => {
 
 describe('deleteEntity', () => {
     it('calls DELETE /api/entities/:id', async () => {
-        global.fetch.mockResolvedValue({});
         await deleteEntity(5);
-        expect(fetch).toHaveBeenCalledWith('/api/entities/5', { method: 'DELETE' });
+        expect(fetch).toHaveBeenCalledWith('/api/entities/5', expect.objectContaining({
+            method: 'DELETE',
+            credentials: 'include',
+        }));
     });
 });
 
@@ -65,6 +76,7 @@ describe('generateEntity', () => {
         const result = await generateEntity('person', 'Arthur', 'fantasy');
         expect(fetch).toHaveBeenCalledWith('/api/entities/generate', expect.objectContaining({
             method: 'POST',
+            credentials: 'include',
         }));
         const body = JSON.parse(fetch.mock.calls[0][1].body);
         expect(body.entity_type).toBe('person');
