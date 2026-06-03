@@ -60,11 +60,37 @@ def register_routes(app):
     @app.route("/api/usage", methods=["GET"])
     def get_usage():
         from app.services.usage_service import UsageService
-        import anthropic, os
+        import anthropic, os, requests as http
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+
+        # Verify key is active
         try:
-            client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+            client = anthropic.Anthropic(api_key=api_key)
             client.models.list(limit=1)
             key_active = True
         except Exception:
             key_active = False
-        return jsonify({"key_active": key_active, **UsageService.get_stats()})
+
+        # Attempt to fetch remaining credits (available for some account types)
+        credits_remaining = None
+        try:
+            resp = http.get(
+                "https://api.anthropic.com/v1/organizations/billing/credit_grants",
+                headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
+                timeout=5,
+            )
+            if resp.ok:
+                grants = resp.json().get("data", [])
+                # Sum unexpired grants
+                credits_remaining = sum(
+                    g.get("remaining_amount", 0) for g in grants
+                    if g.get("status") == "active"
+                )
+        except Exception:
+            pass
+
+        return jsonify({
+            "key_active": key_active,
+            "credits_remaining": credits_remaining,
+            **UsageService.get_stats(),
+        })
