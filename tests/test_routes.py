@@ -251,7 +251,7 @@ def test_html_in_title_is_stripped(auth_client, db):
 
 def test_login_with_correct_password(client, db):
     response = client.post("/api/auth/login",
-        data=json.dumps({"password": "test-password"}),
+        data=json.dumps({"username": "anyone", "password": "test-password"}),
         content_type="application/json")
     assert response.status_code == 200
     assert response.get_json()["ok"] is True
@@ -259,7 +259,7 @@ def test_login_with_correct_password(client, db):
 
 def test_login_with_wrong_password(client, db):
     response = client.post("/api/auth/login",
-        data=json.dumps({"password": "wrong"}),
+        data=json.dumps({"username": "anyone", "password": "wrong"}),
         content_type="application/json")
     assert response.status_code == 401
 
@@ -272,7 +272,7 @@ def test_login_without_password_returns_400(client, db):
 
 
 def test_me_returns_authenticated_after_login(client, db):
-    client.post("/api/auth/login", json={"password": "test-password"})
+    client.post("/api/auth/login", json={"username": "anyone", "password": "test-password"})
     response = client.get("/api/auth/me")
     assert response.get_json()["authenticated"] is True
 
@@ -283,7 +283,7 @@ def test_me_returns_unauthenticated_before_login(client, db):
 
 
 def test_logout_clears_session(client, db):
-    client.post("/api/auth/login", json={"password": "test-password"})
+    client.post("/api/auth/login", json={"username": "anyone", "password": "test-password"})
     client.post("/api/auth/logout")
     response = client.get("/api/auth/me")
     assert response.get_json()["authenticated"] is False
@@ -295,6 +295,6 @@ def test_protected_route_returns_401_without_auth(client, db):
 
 
 def test_protected_route_accessible_after_login(client, db):
-    client.post("/api/auth/login", json={"password": "test-password"})
+    client.post("/api/auth/login", json={"username": "anyone", "password": "test-password"})
     response = client.get("/api/entities")
     assert response.status_code == 200

@@ -19,8 +19,8 @@ export function apiFetch(url, options = {}) {
     });
 }
 
-export const login = (password) =>
-    apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ password }) })
+export const login = (username, password) =>
+    apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) })
         .then(res => res.json());
 
 export const logout = () =>
