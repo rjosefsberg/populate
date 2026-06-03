@@ -1,27 +1,19 @@
+import { apiFetch } from "./client";
+
 export const getEntities = () =>
-    fetch("/api/entities").then(res => res.json());
+    apiFetch("/api/entities").then(res => res.json());
 
 export const createEntity = (data) =>
-    fetch("/api/entities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    }).then(res => res.json());
+    apiFetch("/api/entities", { method: "POST", body: JSON.stringify(data) }).then(res => res.json());
 
 export const updateEntity = (id, data) =>
-    fetch(`/api/entities/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    }).then(res => res.json());
+    apiFetch(`/api/entities/${id}`, { method: "PUT", body: JSON.stringify(data) }).then(res => res.json());
 
 export const deleteEntity = (id) =>
-    fetch(`/api/entities/${id}`, { method: "DELETE" });
+    apiFetch(`/api/entities/${id}`, { method: "DELETE" });
 
 export const generateEntity = (entity_type, prompt, genre = "fantasy", hint = null, prompt_associations = []) =>
-    fetch("/api/entities/generate", {
+    apiFetch("/api/entities/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_type, prompt, genre, ...(hint ? { hint } : {}), ...(prompt_associations.length ? { prompt_associations } : {}) })
+        body: JSON.stringify({ entity_type, prompt, genre, ...(hint ? { hint } : {}), ...(prompt_associations.length ? { prompt_associations } : {}) }),
     }).then(res => res.json());
-

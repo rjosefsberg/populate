@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { apiFetch } from '../api/client';
 
 function UsageButton() {
     const [open, setOpen] = useState(false);
@@ -10,7 +11,7 @@ function UsageButton() {
         if (open) { setOpen(false); return; }
         setLoading(true);
         setOpen(true);
-        fetch('/api/usage')
+        apiFetch('/api/usage')
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
