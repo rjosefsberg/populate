@@ -54,7 +54,7 @@ Run on every push to `master` and on every pull request targeting `master`.
 
 No secrets needed for the test suite itself. If you later add e2e tests or a deploy step, the following would need to be added to GitHub repo Settings → Secrets:
 - `ANTHROPIC_API_KEY` (for any tests that don't mock the API)
-- `DATABASE_URL` (for any tests against a real Postgres instance)
+- `DATABASE_URL` (only if switching from the default SQLite to a hosted database)
 
 ---
 

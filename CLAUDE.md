@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Populate** is a full-stack fantasy content generator. Users create entities (characters, places, items), the app uses the Anthropic Claude API to generate creative fantasy descriptions, and stores them in PostgreSQL. The frontend is React; the backend is Flask.
+**Populate** is a full-stack fantasy content generator. Users create entities (characters, places, items), the app uses the Anthropic Claude API to generate creative fantasy descriptions, and stores them in SQLite. The frontend is React; the backend is Flask.
 
 ## Commands
 
@@ -58,7 +58,7 @@ Required `.env` variables (see `.env` for current values):
 ```
 FLASK_APP=run.py
 FLASK_ENV=development
-DATABASE_URL=postgresql://user:pass@localhost:5432/populate
+DATABASE_URL=sqlite:///populate.db  # optional, this is the default
 ANTHROPIC_API_KEY=...
 ```
 
