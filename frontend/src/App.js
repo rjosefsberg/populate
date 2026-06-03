@@ -7,6 +7,7 @@ import {createAssociation} from "./api/associations";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
+import UsageButton from "./components/UsageButton";
 
 function App() {
     const [entities, setEntities] = useState([]);
@@ -73,6 +74,7 @@ function App() {
                 onSelect={setSelectedEntity}
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
+                <UsageButton />
             </Sidebar>
 
             <div className="flex-grow-1">
