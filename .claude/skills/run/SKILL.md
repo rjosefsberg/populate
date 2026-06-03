@@ -8,8 +8,7 @@ Two servers must run in parallel: Flask on :5000 and React on :3000. The React d
 
 ## Prerequisites
 
-- PostgreSQL running with a `populate` database (connection string in `.env` as `DATABASE_URL`)
-- `.env` at project root with `FLASK_APP=run.py`, `FLASK_ENV=development`, `DATABASE_URL`, `ANTHROPIC_API_KEY`
+- `.env` at project root with `FLASK_APP=run.py`, `FLASK_ENV=development`, `ANTHROPIC_API_KEY`
 - Python deps installed (`pip install -r requirements.txt`)
 - Node deps installed (`cd frontend && npm install`)
 
@@ -50,6 +49,6 @@ Both should return a JSON array.
 
 ## Notes
 
-- `run.py` prints `Database connected successfully` on startup; a failure message means `.env` or Postgres is misconfigured.
+- `run.py` prints `Database connected successfully` on startup; a failure message means `.env` is misconfigured.
 - React hot-reloads on save; Flask restarts automatically in debug mode.
 - Port 3000 or 5000 already in use → find the PID with `netstat -ano | findstr :3000` and kill it, or set `PORT=3001` before `npm start`.
