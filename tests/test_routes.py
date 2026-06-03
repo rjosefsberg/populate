@@ -180,3 +180,68 @@ def test_generate_entity_without_optional_fields(client, db):
 
     assert response.status_code == 200
     mock_generate.assert_called_once_with("place", "Rivendell", "fantasy", None, [])
+
+
+# --- Input validation / sanitization ---
+
+def test_create_entity_missing_title_returns_400(client, db):
+    response = client.post("/api/entities",
+        data=json.dumps({"body": "Some body text"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_entity_missing_body_returns_400(client, db):
+    response = client.post("/api/entities",
+        data=json.dumps({"title": "A title"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_entity_no_json_returns_4xx(client, db):
+    response = client.post("/api/entities", data="not json", content_type="text/plain")
+    assert response.status_code in (400, 415)
+
+
+def test_generate_invalid_entity_type_returns_400(client, db):
+    response = client.post("/api/entities/generate",
+        data=json.dumps({"entity_type": "dragon", "prompt": "Name", "genre": "fantasy"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_generate_invalid_genre_returns_400(client, db):
+    response = client.post("/api/entities/generate",
+        data=json.dumps({"entity_type": "person", "prompt": "Name", "genre": "romance"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_generate_missing_prompt_returns_400(client, db):
+    response = client.post("/api/entities/generate",
+        data=json.dumps({"entity_type": "person", "genre": "fantasy"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_association_self_link_returns_400(client, db):
+    entity = make_entity(db)
+    response = client.post("/api/associations",
+        data=json.dumps({"entity_id_1": entity.id, "entity_id_2": entity.id, "description": "self"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_association_invalid_ids_returns_400(client, db):
+    response = client.post("/api/associations",
+        data=json.dumps({"entity_id_1": "abc", "entity_id_2": "xyz", "description": "test"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_html_in_title_is_stripped(client, db):
+    response = client.post("/api/entities",
+        data=json.dumps({"title": "<b>Bold Name</b>", "body": "A body."}),
+        content_type="application/json")
+    assert response.status_code == 201
+    assert response.get_json()["title"] == "Bold Name"

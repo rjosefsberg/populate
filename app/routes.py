@@ -1,4 +1,8 @@
 from flask import jsonify, request
+from app.utils.sanitize import (
+    require_json, validate_entity_type, validate_genre,
+    clean_text, clean_prompt_text, LIMITS,
+)
 
 
 def register_routes(app):
@@ -11,7 +15,35 @@ def register_routes(app):
     def generate_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
-        result = EntityService.generate(data["entity_type"], data["prompt"], data.get("genre", "fantasy"), data.get("hint"), data.get("prompt_associations", []))
+        if (err := require_json(data)):
+            return err
+
+        entity_type = clean_text(data.get("entity_type", ""), 50)
+        if (err := validate_entity_type(entity_type)):
+            return err
+
+        genre = clean_text(data.get("genre", "fantasy"), 50)
+        if (err := validate_genre(genre)):
+            return err
+
+        if not data.get("prompt", "").strip():
+            return jsonify({"error": "prompt is required"}), 400
+
+        prompt = clean_prompt_text(data["prompt"], LIMITS["prompt"])
+        hint = clean_prompt_text(data["hint"], LIMITS["hint"]) if data.get("hint") else None
+
+        raw_assocs = data.get("prompt_associations", [])
+        if not isinstance(raw_assocs, list):
+            return jsonify({"error": "prompt_associations must be a list"}), 400
+        prompt_associations = [
+            {
+                "title": clean_prompt_text(a.get("title", ""), LIMITS["title"]),
+                "description": clean_prompt_text(a.get("description", ""), LIMITS["description"]),
+            }
+            for a in raw_assocs if isinstance(a, dict)
+        ]
+
+        result = EntityService.generate(entity_type, prompt, genre, hint, prompt_associations)
         return jsonify(result), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])
@@ -23,14 +55,33 @@ def register_routes(app):
     def create_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
-        entity = EntityService.create(data)
+        if (err := require_json(data)):
+            return err
+        if not data.get("title", "").strip():
+            return jsonify({"error": "title is required"}), 400
+        if not data.get("body", "").strip():
+            return jsonify({"error": "body is required"}), 400
+
+        entity = EntityService.create({
+            "title": clean_text(data["title"], LIMITS["title"]),
+            "body":  clean_text(data["body"],  LIMITS["body"]),
+        })
         return jsonify(entity), 201
 
     @app.route("/api/entities/<int:entity_id>", methods=["PUT"])
     def update_entity(entity_id):
         from app.services.entity_service import EntityService
         data = request.get_json()
-        entity = EntityService.update(entity_id, data)
+        if (err := require_json(data)):
+            return err
+
+        cleaned = {}
+        if "title" in data:
+            cleaned["title"] = clean_text(data["title"], LIMITS["title"])
+        if "body" in data:
+            cleaned["body"] = clean_text(data["body"], LIMITS["body"])
+
+        entity = EntityService.update(entity_id, cleaned)
         return jsonify(entity), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["DELETE"])
@@ -48,7 +99,23 @@ def register_routes(app):
     def create_association():
         from app.services.association_service import AssociationService
         data = request.get_json()
-        assoc = AssociationService.create(data)
+        if (err := require_json(data)):
+            return err
+
+        try:
+            entity_id_1 = int(data["entity_id_1"])
+            entity_id_2 = int(data["entity_id_2"])
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"error": "entity_id_1 and entity_id_2 must be integers"}), 400
+
+        if entity_id_1 == entity_id_2:
+            return jsonify({"error": "entity_id_1 and entity_id_2 must be different"}), 400
+
+        assoc = AssociationService.create({
+            "entity_id_1":  entity_id_1,
+            "entity_id_2":  entity_id_2,
+            "description":  clean_text(data.get("description", ""), LIMITS["description"]),
+        })
         return jsonify(assoc), 201
 
     @app.route("/api/associations/<int:association_id>", methods=["DELETE"])
