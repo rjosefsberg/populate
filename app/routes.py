@@ -3,15 +3,18 @@ from app.utils.sanitize import (
     require_json, validate_entity_type, validate_genre,
     clean_text, clean_prompt_text, LIMITS,
 )
+from app.auth import require_auth
 
 
 def register_routes(app):
     @app.route("/api/entities", methods=["GET"])
+    @require_auth
     def get_entities():
         from app.services.entity_service import EntityService
         return jsonify(EntityService.get_all())
 
     @app.route("/api/entities/generate", methods=["POST"])
+    @require_auth
     def generate_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
@@ -47,11 +50,13 @@ def register_routes(app):
         return jsonify(result), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])
+    @require_auth
     def get_entity(entity_id):
         from app.services.entity_service import EntityService
         return jsonify(EntityService.get_by_id(entity_id))
 
     @app.route("/api/entities", methods=["POST"])
+    @require_auth
     def create_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
@@ -69,6 +74,7 @@ def register_routes(app):
         return jsonify(entity), 201
 
     @app.route("/api/entities/<int:entity_id>", methods=["PUT"])
+    @require_auth
     def update_entity(entity_id):
         from app.services.entity_service import EntityService
         data = request.get_json()
@@ -85,17 +91,20 @@ def register_routes(app):
         return jsonify(entity), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["DELETE"])
+    @require_auth
     def delete_entity(entity_id):
         from app.services.entity_service import EntityService
         EntityService.delete(entity_id)
         return jsonify({"message": "Entity deleted"}), 200
 
     @app.route("/api/entities/<int:entity_id>/associations", methods=["GET"])
+    @require_auth
     def get_associations(entity_id):
         from app.services.association_service import AssociationService
         return jsonify(AssociationService.get_for_entity(entity_id))
 
     @app.route("/api/associations", methods=["POST"])
+    @require_auth
     def create_association():
         from app.services.association_service import AssociationService
         data = request.get_json()
@@ -119,12 +128,14 @@ def register_routes(app):
         return jsonify(assoc), 201
 
     @app.route("/api/associations/<int:association_id>", methods=["DELETE"])
+    @require_auth
     def delete_association(association_id):
         from app.services.association_service import AssociationService
         AssociationService.delete(association_id)
         return jsonify({"message": "Association deleted"}), 200
 
     @app.route("/api/usage", methods=["GET"])
+    @require_auth
     def get_usage():
         import logging
         log = logging.getLogger(__name__)

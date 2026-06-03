@@ -1,25 +1,46 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
 import EditEntityForm from "./components/EditEntityForm";
-import {getEntities, createEntity, updateEntity, deleteEntity, generateEntity} from "./api/entities";
-import {createAssociation} from "./api/associations";
+import LoginPage from "./components/LoginPage";
+import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from "./api/entities";
+import { createAssociation } from "./api/associations";
+import { getMe, logout, setUnauthorizedHandler } from "./api/client";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
 import UsageButton from "./components/UsageButton";
 
 function App() {
+    const [authenticated, setAuthenticated] = useState(null); // null = loading
     const [entities, setEntities] = useState([]);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
     const [modalShow, setModalShow] = React.useState(false);
 
+    // Redirect to login on any 401
+    setUnauthorizedHandler(() => setAuthenticated(false));
+
     useEffect(() => {
-        getEntities().then(data => setEntities(data));
+        getMe().then(data => setAuthenticated(data.authenticated));
     }, []);
 
-    const handleGenerate = (prompt, entityType, genre = 'fantasy', hint = null, promptAssociations = []) => {
+    useEffect(() => {
+        if (authenticated) {
+            getEntities().then(data => setEntities(data));
+        }
+    }, [authenticated]);
+
+    const handleLogout = () => {
+        logout().then(() => {
+            setAuthenticated(false);
+            setEntities([]);
+            setSelectedEntity(null);
+            setEditingEntity(null);
+        });
+    };
+
+    const handleGenerate = (prompt, entityType, genre = "fantasy", hint = null, promptAssociations = []) => {
         return generateEntity(entityType, prompt, genre, hint, promptAssociations);
     };
 
@@ -28,7 +49,7 @@ function App() {
             .then(newEntity => {
                 const valid = (associations || []).filter(a => a.entityId);
                 return Promise.all(
-                    valid.map(a => createAssociation({ entity_id_1: newEntity.id, entity_id_2: Number(a.entityId), description: a.label || '' }))
+                    valid.map(a => createAssociation({ entity_id_1: newEntity.id, entity_id_2: Number(a.entityId), description: a.label || "" }))
                 ).then(savedAssocs => {
                     const entityWithAssocs = { ...newEntity, associations: savedAssocs };
                     setEntities(prev => [...prev, entityWithAssocs]);
@@ -45,7 +66,7 @@ function App() {
     };
 
     const handleSave = (id, title, body) => {
-        updateEntity(id, {title, body})
+        updateEntity(id, { title, body })
             .then(updated => {
                 const withAssocs = { ...updated, associations: editingEntity?.associations || [] };
                 setEntities(prev => prev.map(e => e.id === id ? withAssocs : e));
@@ -58,6 +79,9 @@ function App() {
         setEntities(prev => prev.map(e => e.id === updatedEntity.id ? updatedEntity : e));
         setEditingEntity(updatedEntity);
     };
+
+    if (authenticated === null) return null; // loading splash
+    if (!authenticated) return <LoginPage onLogin={() => setAuthenticated(true)} />;
 
     return (
         <div className="d-flex">
@@ -75,6 +99,9 @@ function App() {
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
                 <UsageButton />
+                <button className="btn btn-outline-secondary btn-sm w-100 mt-2" style={{ fontSize: "0.75rem" }} onClick={handleLogout}>
+                    Sign out
+                </button>
             </Sidebar>
 
             <div className="flex-grow-1">

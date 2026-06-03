@@ -24,7 +24,10 @@ def create_app(config_name="default"):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app)
+    CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+
+    from app.auth import register_auth_routes
+    register_auth_routes(app)
 
     from app.routes import register_routes
     register_routes(app)
