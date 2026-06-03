@@ -18,10 +18,10 @@ export const updateEntity = (id, data) =>
 export const deleteEntity = (id) =>
     fetch(`/api/entities/${id}`, { method: "DELETE" });
 
-export const generateEntity = (entity_type, prompt, genre = "fantasy", hint = null) =>
+export const generateEntity = (entity_type, prompt, genre = "fantasy", hint = null, prompt_associations = []) =>
     fetch("/api/entities/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_type, prompt, genre, ...(hint ? { hint } : {}) })
+        body: JSON.stringify({ entity_type, prompt, genre, ...(hint ? { hint } : {}), ...(prompt_associations.length ? { prompt_associations } : {}) })
     }).then(res => res.json());
 

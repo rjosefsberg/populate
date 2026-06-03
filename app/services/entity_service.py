@@ -39,37 +39,52 @@ class EntityService:
         return entity.to_dict()
 
     @staticmethod
-    def generate(entity_type, prompt, genre="fantasy", hint=None):
+    def _build_prompt(entity_type, name, genre, prompt_associations, hint):
+        parts = []
+
+        parts.append(
+            f"You are a creative writer specializing in the {genre} genre.\n"
+            f"Write a concise three-sentence description for the {entity_type} named \"{name}\" "
+            f"that fits naturally into a {genre} setting."
+        )
+
+        if prompt_associations:
+            lines = "\n".join(
+                f"- {a['title']}: {a['description']}" if a.get('description') else f"- {a['title']}"
+                for a in prompt_associations
+            )
+            parts.append(
+                f"This entity has the following relationships — weave them naturally into the description:\n{lines}"
+            )
+
+        if hint:
+            parts.append(f"Additional instruction: {hint}")
+
+        parts.append(
+            "Rules:\n"
+            "- Write exactly three sentences\n"
+            f"- Stay true to the {genre} genre's tone, tropes, and conventions\n"
+            "- Be descriptive but concise\n"
+            "- Do not include the entity's name or type as a label in your response\n"
+            "- Return only valid JSON, no preamble, no markdown, no code blocks\n\n"
+            'Return this exact JSON structure:\n{"description": "<your three sentence description here>"}'
+        )
+
+        return "\n\n".join(parts)
+
+    @staticmethod
+    def generate(entity_type, prompt, genre="fantasy", hint=None, prompt_associations=None):
         print('Generating description for ', entity_type, ':', prompt, '(', genre, ')...')
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-        hint_line = f"\n    Additional instruction: {hint}" if hint else ""
-
-        engineered_prompt = f"""You are a creative writer specializing in the {genre} genre.
-
-    You will be given an element type and a name. Your job is to write a concise three sentence description for that element that fits naturally into a {genre} setting.
-
-    Genre: {genre}
-    Element type: {entity_type}
-    Element name: {prompt}{hint_line}
-
-    Rules:
-    - Write exactly three sentences
-    - Stay true to the {genre} genre's tone, tropes, and conventions
-    - Stay consistent with the element type
-    - Be descriptive but concise
-    - Do not include the name or type as a label in your response
-    - Return only valid JSON, no preamble, no markdown, no code blocks
-
-    Return this exact JSON structure:
-    {{"description": "<your three sentence description here>"}}"""
+        engineered_prompt = EntityService._build_prompt(
+            entity_type, prompt, genre, prompt_associations or [], hint
+        )
 
         message = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
-            messages=[
-                {"role": "user", "content": engineered_prompt}
-            ]
+            messages=[{"role": "user", "content": engineered_prompt}]
         )
 
         import json

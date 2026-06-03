@@ -18,8 +18,8 @@ function App() {
         getEntities().then(data => setEntities(data));
     }, []);
 
-    const handleGenerate = (prompt, entityType, genre = 'fantasy', hint = null) => {
-        return generateEntity(entityType, prompt, genre, hint);
+    const handleGenerate = (prompt, entityType, genre = 'fantasy', hint = null, promptAssociations = []) => {
+        return generateEntity(entityType, prompt, genre, hint, promptAssociations);
     };
 
     const handleConfirm = (title, description, associations) => {
