@@ -4,9 +4,10 @@ manage.py — dev lifecycle script for Populate
 Usage:
   python manage.py start     # start backend + frontend dev servers
   python manage.py stop      # stop running servers
-  python manage.py run       # start everything (alias for start)
-  python manage.py build     # build React frontend
-  python manage.py db        # flask db migrate + upgrade
+  python manage.py run       # alias for start
+  python manage.py build     # build React frontend for production
+  python manage.py db        # run pending database migrations (SQLite)
+  python manage.py test      # run backend (pytest) and frontend (jest) tests
 """
 
 import argparse
@@ -104,6 +105,10 @@ def cmd_build():
 
 
 def cmd_db():
+    """Apply any pending SQLite migrations."""
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///populate.db")
+    print(f"Database: {db_url}")
+
     env = {**os.environ, "FLASK_APP": "run.py"}
     flask = ROOT / ".venv" / "Scripts" / "flask.exe"
     flask_cmd = str(flask) if flask.exists() else "flask"
@@ -113,24 +118,62 @@ def cmd_db():
 
     print("Running flask db upgrade…")
     run_cmd([flask_cmd, "db", "upgrade"], cwd=ROOT, env=env)
-    print("Database up to date.")
+
+    # Show the resolved SQLite file path
+    if db_url.startswith("sqlite:///"):
+        db_path = ROOT / db_url.replace("sqlite:///", "")
+        print(f"Database up to date → {db_path.resolve()}")
+    else:
+        print("Database up to date.")
+
+
+def cmd_test():
+    """Run backend (pytest) and frontend (jest) test suites."""
+    failed = False
+
+    print("=" * 50)
+    print("Backend tests (pytest)")
+    print("=" * 50)
+    result = subprocess.run([PYTHON, "-m", "pytest"], cwd=ROOT)
+    if result.returncode != 0:
+        failed = True
+
+    print()
+    print("=" * 50)
+    print("Frontend tests (jest)")
+    print("=" * 50)
+    npx = "npx.cmd" if sys.platform == "win32" else "npx"
+    result = subprocess.run(
+        [npx, "jest", "--config", "jest.config.js", "--watchAll=false", "--ci"],
+        cwd=FRONTEND,
+    )
+    if result.returncode != 0:
+        failed = True
+
+    print()
+    if failed:
+        print("Tests FAILED.")
+        sys.exit(1)
+    else:
+        print("All tests passed.")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Populate app manager")
     parser.add_argument(
         "command",
-        choices=["start", "stop", "run", "build", "db"],
+        choices=["start", "stop", "run", "build", "db", "test"],
         help="Command to run",
     )
     args = parser.parse_args()
 
     commands = {
         "start": cmd_start,
-        "run": cmd_start,
-        "stop": cmd_stop,
+        "run":   cmd_start,
+        "stop":  cmd_stop,
         "build": cmd_build,
-        "db": cmd_db,
+        "db":    cmd_db,
+        "test":  cmd_test,
     }
     commands[args.command]()
 
