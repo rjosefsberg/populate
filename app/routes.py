@@ -46,7 +46,10 @@ def register_routes(app):
             for a in raw_assocs if isinstance(a, dict)
         ]
 
-        result = EntityService.generate(entity_type, prompt, genre, hint, prompt_associations)
+        try:
+            result = EntityService.generate(entity_type, prompt, genre, hint, prompt_associations)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify(result), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])

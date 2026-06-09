@@ -44,14 +44,25 @@ class EntityService:
         return entity.to_dict()
 
     @staticmethod
-    def _build_prompt(entity_type, name, genre, prompt_associations, hint):
-        parts = []
-
-        parts.append(
+    def _build_system_prompt(genre):
+        return (
             f"You are a creative writer specializing in the {genre} genre.\n"
-            f"Write a concise three-sentence description for the {entity_type} named \"{name}\" "
-            f"that fits naturally into a {genre} setting."
+            "Rules:\n"
+            "- Write exactly three sentences\n"
+            f"- Stay true to the {genre} genre's tone, tropes, and conventions\n"
+            "- Be descriptive but concise\n"
+            "- Do not include the entity's name or type as a label in your response\n"
+            "- Return only valid JSON, no preamble, no markdown, no code blocks\n\n"
+            'Return this exact JSON structure:\n{"description": "<your three sentence description here>"}'
         )
+
+    @staticmethod
+    def _build_user_prompt(entity_type, name, genre, prompt_associations, hint):
+        safe_name = name.replace("\\", "\\\\").replace('"', '\\"')
+        parts = [
+            f'Write a concise three-sentence description for the {entity_type} named "{safe_name}" '
+            f"that fits naturally into a {genre} setting."
+        ]
 
         if prompt_associations:
             lines = "\n".join(
@@ -63,17 +74,7 @@ class EntityService:
             )
 
         if hint:
-            parts.append(f"Additional instruction: {hint}")
-
-        parts.append(
-            "Rules:\n"
-            "- Write exactly three sentences\n"
-            f"- Stay true to the {genre} genre's tone, tropes, and conventions\n"
-            "- Be descriptive but concise\n"
-            "- Do not include the entity's name or type as a label in your response\n"
-            "- Return only valid JSON, no preamble, no markdown, no code blocks\n\n"
-            'Return this exact JSON structure:\n{"description": "<your three sentence description here>"}'
-        )
+            parts.append(f"Additional guidance: {hint}")
 
         return "\n\n".join(parts)
 
@@ -81,17 +82,19 @@ class EntityService:
     def generate(entity_type, prompt, genre="fantasy", hint=None, prompt_associations=None):
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-        engineered_prompt = EntityService._build_prompt(
+        system_prompt = EntityService._build_system_prompt(genre)
+        user_prompt = EntityService._build_user_prompt(
             entity_type, prompt, genre, prompt_associations or [], hint
         )
 
-        logger.debug("=== PROMPT ===\n%s\n==============", engineered_prompt)
+        logger.debug("=== SYSTEM ===\n%s\n=== USER ===\n%s\n==============", system_prompt, user_prompt)
 
         try:
             message = client.messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=1024,
-                messages=[{"role": "user", "content": engineered_prompt}]
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_prompt}]
             )
         except anthropic.APIError as e:
             logger.error(
@@ -117,7 +120,5 @@ class EntityService:
         try:
             return json.loads(content)
         except json.JSONDecodeError:
-            logger.error(
-                "JSON parse failed — full response content below:\n%s", content
-            )
-            raise
+            logger.error("JSON parse failed — full response content below:\n%s", content)
+            raise ValueError("Invalid JSON returned by generation model")
