@@ -28,7 +28,8 @@ Learning more about the deployment technologies was also interesting. I did not 
 but I did set up a CI pipeline to build and push a Docker image to GitHub Container Registry. 
 
 My thoughts. These tools are exceptionally powerful, but also extremely naive. It needs reminders not to overengineer. 
-I can say pretty confidently the jobs of developers are safe and I look forward to working with Claude again, just on a much smaller scale. 
+I can say pretty confidently that these tools will be part of our job from here on. I just hope we, as an industry, can
+mature fast enough to understand their limitations. 
 
 
 ## What it does
