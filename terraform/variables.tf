@@ -34,6 +34,11 @@ variable "app_password" {
   default     = ""
 }
 
+variable "ssh_cidr" {
+  description = "CIDR block allowed to SSH into the instance (e.g. your home IP: 1.2.3.4/32)"
+  type        = string
+}
+
 variable "image" {
   description = "Docker image to run"
   type        = string
