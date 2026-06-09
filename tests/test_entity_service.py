@@ -4,49 +4,49 @@ from unittest.mock import patch, MagicMock
 from app.services.entity_service import EntityService
 
 
-# --- _build_prompt tests (no DB needed) ---
+# --- _build_user_prompt tests (no DB needed) ---
 
-def test_build_prompt_contains_genre():
-    prompt = EntityService._build_prompt("person", "Aragorn", "fantasy", [], None)
+def test_build_user_prompt_contains_genre():
+    prompt = EntityService._build_user_prompt("person", "Aragorn", "fantasy", [], None)
     assert "fantasy" in prompt
 
 
-def test_build_prompt_contains_entity_type_and_name():
-    prompt = EntityService._build_prompt("place", "Rivendell", "fantasy", [], None)
+def test_build_user_prompt_contains_entity_type_and_name():
+    prompt = EntityService._build_user_prompt("place", "Rivendell", "fantasy", [], None)
     assert "place" in prompt
     assert "Rivendell" in prompt
 
 
-def test_build_prompt_with_hint_includes_hint():
-    prompt = EntityService._build_prompt("person", "Gandalf", "fantasy", [], "make him mysterious")
+def test_build_user_prompt_with_hint_includes_hint():
+    prompt = EntityService._build_user_prompt("person", "Gandalf", "fantasy", [], "make him mysterious")
     assert "make him mysterious" in prompt
 
 
-def test_build_prompt_without_hint_no_additional_instruction():
-    prompt = EntityService._build_prompt("person", "Gandalf", "fantasy", [], None)
+def test_build_user_prompt_without_hint_no_additional_instruction():
+    prompt = EntityService._build_user_prompt("person", "Gandalf", "fantasy", [], None)
     assert "Additional instruction" not in prompt
 
 
-def test_build_prompt_with_associations_includes_them():
+def test_build_user_prompt_with_associations_includes_them():
     associations = [{"title": "Saruman", "description": "rival wizard"}]
-    prompt = EntityService._build_prompt("person", "Gandalf", "fantasy", associations, None)
+    prompt = EntityService._build_user_prompt("person", "Gandalf", "fantasy", associations, None)
     assert "Saruman" in prompt
     assert "rival wizard" in prompt
 
 
-def test_build_prompt_with_associations_without_description():
+def test_build_user_prompt_with_associations_without_description():
     associations = [{"title": "Saruman"}]
-    prompt = EntityService._build_prompt("person", "Gandalf", "fantasy", associations, None)
+    prompt = EntityService._build_user_prompt("person", "Gandalf", "fantasy", associations, None)
     assert "Saruman" in prompt
 
 
-def test_build_prompt_without_associations_no_relationships_section():
-    prompt = EntityService._build_prompt("person", "Gandalf", "fantasy", [], None)
+def test_build_user_prompt_without_associations_no_relationships_section():
+    prompt = EntityService._build_user_prompt("person", "Gandalf", "fantasy", [], None)
     assert "relationships" not in prompt
 
 
-def test_build_prompt_scifi_genre():
-    prompt = EntityService._build_prompt("person", "Ripley", "sci-fi", [], None)
+def test_build_user_prompt_scifi_genre():
+    prompt = EntityService._build_user_prompt("person", "Ripley", "sci-fi", [], None)
     assert "sci-fi" in prompt
 
 
