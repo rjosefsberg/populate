@@ -6,13 +6,15 @@ from flask import current_app, jsonify, request, session
 
 def _check_credentials(username: str, password: str) -> bool:
     stored = current_app.config.get("APP_PASSWORD")
-    if stored:
-        return hmac.compare_digest(
-            hashlib.sha256(password.encode()).digest(),
-            hashlib.sha256(stored.encode()).digest(),
+    if not stored:
+        current_app.logger.error(
+            "APP_PASSWORD is not configured — all login attempts will be rejected"
         )
-    # Default fallback when no APP_PASSWORD is configured
-    return username == "admin" and password == "admin"
+        return False
+    return hmac.compare_digest(
+        hashlib.sha256(password.encode()).digest(),
+        hashlib.sha256(stored.encode()).digest(),
+    )
 
 
 def require_auth(f):
