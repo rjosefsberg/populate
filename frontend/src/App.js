@@ -12,6 +12,8 @@ import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
 import UsageButton from "./components/UsageButton";
 import SelectProjectPrompt from "./components/SelectProjectPrompt";
+import SettingsModal from "./components/SettingsModal";
+import { getSettings } from "./api/settings";
 
 function App() {
     const [authenticated, setAuthenticated] = useState(null); // null = loading
@@ -21,6 +23,8 @@ function App() {
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
     const [modalShow, setModalShow] = React.useState(false);
+    const [settingsShow, setSettingsShow] = React.useState(false);
+    const [settings, setSettings] = React.useState(null);
 
     // Redirect to login on any 401
     setUnauthorizedHandler(() => setAuthenticated(false));
@@ -32,6 +36,7 @@ function App() {
     useEffect(() => {
         if (authenticated) {
             getProjects().then(data => setProjects(data));
+            getSettings().then(data => setSettings(data));
         }
     }, [authenticated]);
 
@@ -136,6 +141,11 @@ function App() {
                 onConfirm={handleConfirm}
                 entities={entities}
             />
+            <SettingsModal
+                show={settingsShow}
+                onHide={() => setSettingsShow(false)}
+                onSettingsChange={setSettings}
+            />
             <Sidebar
                 mode={selectedProjectId ? "entities" : "projects"}
                 projects={projects}
@@ -151,10 +161,14 @@ function App() {
                 footer={
                     <div>
                         <button className="btn btn-outline-secondary btn-sm w-100" style={{fontSize: "0.75rem"}}
+                                onClick={() => setSettingsShow(true)}>
+                            Settings
+                        </button>
+                        <button className="btn btn-outline-secondary btn-sm w-100 mt-2" style={{fontSize: "0.75rem"}}
                                 onClick={handleLogout}>
                             Sign out
                         </button>
-                        <UsageButton/>
+                        {settings?.api_key_populated && <UsageButton/>}
                     </div>
                 }
             >

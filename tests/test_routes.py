@@ -203,40 +203,6 @@ def test_get_usage_key_inactive_on_exception(auth_client, db):
     assert data["key_active"] is False
 
 
-# --- Generate route ---
-
-def test_generate_entity_calls_service_with_correct_args(auth_client, db):
-    with patch("app.services.entity_service.EntityService.generate") as mock_generate:
-        mock_generate.return_value = {"description": "A brave hero."}
-
-        response = auth_client.post("/api/entities/generate",
-            data=json.dumps({
-                "entity_type": "person",
-                "prompt": "Arthur",
-                "genre": "fantasy",
-                "hint": "make him noble",
-                "prompt_associations": []
-            }),
-            content_type="application/json")
-
-    assert response.status_code == 200
-    mock_generate.assert_called_once_with("person", "Arthur", "fantasy", "make him noble", [])
-    data = response.get_json()
-    assert data["description"] == "A brave hero."
-
-
-def test_generate_entity_without_optional_fields(auth_client, db):
-    with patch("app.services.entity_service.EntityService.generate") as mock_generate:
-        mock_generate.return_value = {"description": "An ancient place."}
-
-        response = auth_client.post("/api/entities/generate",
-            data=json.dumps({"entity_type": "place", "prompt": "Rivendell"}),
-            content_type="application/json")
-
-    assert response.status_code == 200
-    mock_generate.assert_called_once_with("place", "Rivendell", "fantasy", None, [])
-
-
 # --- Input validation / sanitization ---
 
 def test_create_entity_missing_title_returns_400(auth_client, db):
@@ -256,27 +222,6 @@ def test_create_entity_missing_body_returns_400(auth_client, db):
 def test_create_entity_no_json_returns_4xx(auth_client, db):
     response = auth_client.post("/api/entities", data="not json", content_type="text/plain")
     assert response.status_code in (400, 415)
-
-
-def test_generate_invalid_entity_type_returns_400(auth_client, db):
-    response = auth_client.post("/api/entities/generate",
-        data=json.dumps({"entity_type": "dragon", "prompt": "Name", "genre": "fantasy"}),
-        content_type="application/json")
-    assert response.status_code == 400
-
-
-def test_generate_invalid_genre_returns_400(auth_client, db):
-    response = auth_client.post("/api/entities/generate",
-        data=json.dumps({"entity_type": "person", "prompt": "Name", "genre": "romance"}),
-        content_type="application/json")
-    assert response.status_code == 400
-
-
-def test_generate_missing_prompt_returns_400(auth_client, db):
-    response = auth_client.post("/api/entities/generate",
-        data=json.dumps({"entity_type": "person", "genre": "fantasy"}),
-        content_type="application/json")
-    assert response.status_code == 400
 
 
 def test_create_entity_missing_project_id_returns_400(auth_client, db):

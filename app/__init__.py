@@ -12,8 +12,8 @@ migrate = Migrate()
 FRONTEND_BUILD = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build')
 
 
-def create_app(config_name="default"):
-    app = Flask(__name__, static_folder=FRONTEND_BUILD, static_url_path='')
+def create_app(config_name="default", instance_path=None):
+    app = Flask(__name__, static_folder=FRONTEND_BUILD, static_url_path='', instance_path=instance_path)
     app.config.from_object(config[config_name])
 
     logging.basicConfig(

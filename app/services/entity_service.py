@@ -1,11 +1,5 @@
 from app import db
 from app.models import Entity
-import anthropic
-import os
-import json
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class EntityService:
@@ -48,83 +42,3 @@ class EntityService:
         entity.entity_type = data.get("entity_type", entity.entity_type)
         db.session.commit()
         return entity.to_dict()
-
-    @staticmethod
-    def _build_system_prompt(genre):
-        return (
-            f"You are a creative writer specializing in the {genre} genre.\n"
-            "Rules:\n"
-            "- Write exactly three sentences\n"
-            f"- Stay true to the {genre} genre's tone, tropes, and conventions\n"
-            "- Be descriptive but concise\n"
-            "- Do not include the entity's name or type as a label in your response\n"
-            "- Return only valid JSON, no preamble, no markdown, no code blocks\n\n"
-            'Return this exact JSON structure:\n{"description": "<your three sentence description here>"}'
-        )
-
-    @staticmethod
-    def _build_user_prompt(entity_type, name, genre, prompt_associations, hint):
-        safe_name = name.replace("\\", "\\\\").replace('"', '\\"')
-        parts = [
-            f'Write a concise three-sentence description for the {entity_type} named "{safe_name}" '
-            f"that fits naturally into a {genre} setting."
-        ]
-
-        if prompt_associations:
-            lines = "\n".join(
-                f"- {a['title']}: {a['description']}" if a.get('description') else f"- {a['title']}"
-                for a in prompt_associations
-            )
-            parts.append(
-                f"This entity has the following relationships — weave them naturally into the description:\n{lines}"
-            )
-
-        if hint:
-            parts.append(f"Additional guidance: {hint}")
-
-        return "\n\n".join(parts)
-
-    @staticmethod
-    def generate(entity_type, prompt, genre="fantasy", hint=None, prompt_associations=None):
-        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
-        system_prompt = EntityService._build_system_prompt(genre)
-        user_prompt = EntityService._build_user_prompt(
-            entity_type, prompt, genre, prompt_associations or [], hint
-        )
-
-        logger.debug("=== SYSTEM ===\n%s\n=== USER ===\n%s\n==============", system_prompt, user_prompt)
-
-        try:
-            message = client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_prompt}]
-            )
-        except anthropic.APIError as e:
-            logger.error(
-                "Anthropic API error — status=%s body=%s",
-                getattr(e, 'status_code', '?'),
-                getattr(e, 'body', str(e)),
-                exc_info=True,
-            )
-            raise
-
-        from app.services.usage_service import UsageService
-        UsageService.record(message.usage)
-
-        logger.debug(
-            "=== RESPONSE === stop_reason=%s usage=in:%d out:%d\n%s\n================",
-            message.stop_reason,
-            message.usage.input_tokens,
-            message.usage.output_tokens,
-            message.content[0].text,
-        )
-
-        content = message.content[0].text
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            logger.error("JSON parse failed — full response content below:\n%s", content)
-            raise ValueError("Invalid JSON returned by generation model")

@@ -54,45 +54,6 @@ def register_routes(app):
         project_id = request.args.get("project_id", type=int)
         return jsonify(EntityService.get_all(project_id))
 
-    @app.route("/api/entities/generate", methods=["POST"])
-    @require_auth
-    def generate_entity():
-        from app.services.entity_service import EntityService
-        data = request.get_json()
-        if (err := require_json(data)):
-            return err
-
-        entity_type = clean_text(data.get("entity_type", ""), 50)
-        if (err := validate_entity_type(entity_type)):
-            return err
-
-        genre = clean_text(data.get("genre", "fantasy"), 50)
-        if (err := validate_genre(genre)):
-            return err
-
-        if not data.get("prompt", "").strip():
-            return jsonify({"error": "prompt is required"}), 400
-
-        prompt = clean_prompt_text(data["prompt"], LIMITS["prompt"])
-        hint = clean_prompt_text(data["hint"], LIMITS["hint"]) if data.get("hint") else None
-
-        raw_assocs = data.get("prompt_associations", [])
-        if not isinstance(raw_assocs, list):
-            return jsonify({"error": "prompt_associations must be a list"}), 400
-        prompt_associations = [
-            {
-                "title": clean_prompt_text(a.get("title", ""), LIMITS["title"]),
-                "description": clean_prompt_text(a.get("description", ""), LIMITS["description"]),
-            }
-            for a in raw_assocs if isinstance(a, dict)
-        ]
-
-        try:
-            result = EntityService.generate(entity_type, prompt, genre, hint, prompt_associations)
-        except ValueError as e:
-            return jsonify({"error": str(e)}), 502
-        return jsonify(result), 200
-
     @app.route("/api/assist/chat", methods=["POST"])
     @require_auth
     def assist_chat():
@@ -223,14 +184,40 @@ def register_routes(app):
         AssociationService.delete(association_id)
         return jsonify({"message": "Association deleted"}), 200
 
+    @app.route("/api/settings", methods=["GET"])
+    @require_auth
+    def get_settings():
+        from app.services.settings_service import SettingsService
+        return jsonify(SettingsService.get_all())
+
+    @app.route("/api/settings/<key>", methods=["PUT"])
+    @require_auth
+    def update_setting(key):
+        from app.services.settings_service import SettingsService
+        data = request.get_json()
+        if (err := require_json(data)):
+            return err
+        value = clean_text(data.get("value", ""), LIMITS["setting_value"])
+        result, err = SettingsService.update(key, value)
+        if err:
+            return jsonify({"error": err}), 400
+        return jsonify(result), 200
+
+    @app.route("/api/settings/check-key", methods=["POST"])
+    @require_auth
+    def check_settings_key():
+        from app.services.settings_service import SettingsService
+        return jsonify(SettingsService.check_key()), 200
+
     @app.route("/api/usage", methods=["GET"])
     @require_auth
     def get_usage():
         import logging
         log = logging.getLogger(__name__)
         from app.services.usage_service import UsageService
-        import anthropic, os
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        from app.services.settings_service import SettingsService
+        import anthropic
+        api_key = SettingsService.get_anthropic_api_key()
 
         key_active = False
         credits_remaining = None

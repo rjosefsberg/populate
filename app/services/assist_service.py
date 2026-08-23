@@ -1,5 +1,4 @@
 import anthropic
-import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,8 @@ class AssistService:
 
     @staticmethod
     def chat(entity_type, genre, messages, context_entities=None):
-        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        from app.services.settings_service import SettingsService
+        client = anthropic.Anthropic(api_key=SettingsService.get_anthropic_api_key())
         system_prompt = AssistService._build_system_prompt(entity_type, genre, context_entities)
 
         try:

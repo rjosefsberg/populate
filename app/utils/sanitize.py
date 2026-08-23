@@ -17,6 +17,7 @@ LIMITS = {
     "chat_history": 40,
     "context_entities": 10,
     "context_body": 2_000,
+    "setting_value": 500,
 }
 
 # Tags/attributes allowed in a WYSIWYG-edited entity body. Anything else is stripped.
