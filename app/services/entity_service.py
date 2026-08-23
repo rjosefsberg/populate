@@ -11,8 +11,11 @@ logger = logging.getLogger(__name__)
 class EntityService:
 
     @staticmethod
-    def get_all():
-        return [e.to_dict() for e in Entity.query.all()]
+    def get_all(project_id=None):
+        query = Entity.query
+        if project_id is not None:
+            query = query.filter_by(project_id=project_id)
+        return [e.to_dict() for e in query.all()]
 
     @staticmethod
     def get_by_id(entity_id):
@@ -23,7 +26,8 @@ class EntityService:
     def create(data):
         entity = Entity(
             title=data["title"],
-            body=data["body"]
+            body=data["body"],
+            project_id=data["project_id"],
         )
         db.session.add(entity)
         db.session.commit()

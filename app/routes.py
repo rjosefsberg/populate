@@ -7,11 +7,52 @@ from app.auth import require_auth
 
 
 def register_routes(app):
+    @app.route("/api/projects", methods=["GET"])
+    @require_auth
+    def get_projects():
+        from app.services.project_service import ProjectService
+        return jsonify(ProjectService.get_all())
+
+    @app.route("/api/projects", methods=["POST"])
+    @require_auth
+    def create_project():
+        from app.services.project_service import ProjectService
+        data = request.get_json()
+        if (err := require_json(data)):
+            return err
+        if not data.get("name", "").strip():
+            return jsonify({"error": "name is required"}), 400
+        project = ProjectService.create({"name": clean_text(data["name"], LIMITS["title"])})
+        return jsonify(project), 201
+
+    @app.route("/api/projects/<int:project_id>", methods=["PUT"])
+    @require_auth
+    def update_project(project_id):
+        from app.services.project_service import ProjectService
+        data = request.get_json()
+        if (err := require_json(data)):
+            return err
+        cleaned = {}
+        if "name" in data:
+            if not data["name"].strip():
+                return jsonify({"error": "name is required"}), 400
+            cleaned["name"] = clean_text(data["name"], LIMITS["title"])
+        project = ProjectService.update(project_id, cleaned)
+        return jsonify(project), 200
+
+    @app.route("/api/projects/<int:project_id>", methods=["DELETE"])
+    @require_auth
+    def delete_project(project_id):
+        from app.services.project_service import ProjectService
+        ProjectService.delete(project_id)
+        return jsonify({"message": "Project deleted"}), 200
+
     @app.route("/api/entities", methods=["GET"])
     @require_auth
     def get_entities():
         from app.services.entity_service import EntityService
-        return jsonify(EntityService.get_all())
+        project_id = request.args.get("project_id", type=int)
+        return jsonify(EntityService.get_all(project_id))
 
     @app.route("/api/entities/generate", methods=["POST"])
     @require_auth
@@ -66,10 +107,15 @@ def register_routes(app):
             return jsonify({"error": "title is required"}), 400
         if not data.get("body", "").strip():
             return jsonify({"error": "body is required"}), 400
+        try:
+            project_id = int(data["project_id"])
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"error": "project_id is required"}), 400
 
         entity = EntityService.create({
             "title": clean_text(data["title"], LIMITS["title"]),
             "body":  clean_text(data["body"],  LIMITS["body"]),
+            "project_id": project_id,
         })
         return jsonify(entity), 201
 

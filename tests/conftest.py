@@ -28,6 +28,15 @@ def client(app, db):
 
 
 @pytest.fixture(scope="function")
+def project(db):
+    from app.models.project import Project
+    p = Project(name="Test Project")
+    db.session.add(p)
+    db.session.commit()
+    return p
+
+
+@pytest.fixture(scope="function")
 def auth_client(app, db):
     """Test client with an active session."""
     c = app.test_client()
