@@ -14,6 +14,14 @@ jest.mock('./RichTextEditor', () => ({ value, onChange }) => (
     <textarea aria-label="body" value={value} onChange={e => onChange(e.target.value)} />
 ));
 
+// The Get-help panel is exercised in its own test suite; stub it here to inspect the props it's given.
+jest.mock('./AssistChatPanel', () => ({ entities, currentEntity }) => (
+    <div data-testid="assist-chat-panel">
+        <div data-testid="assist-entities">{entities.map(e => e.title).join(',')}</div>
+        <div data-testid="assist-current-entity">{currentEntity.title}|{currentEntity.body}</div>
+    </div>
+));
+
 import { createAssociation, deleteAssociation } from '../api/associations';
 
 const baseEntity = {
@@ -122,5 +130,34 @@ describe('EditEntityForm', () => {
             const stillPresent = items.find(item => item.textContent.includes('allies'));
             expect(stillPresent).toBeFalsy();
         });
+    });
+
+    it('does not show the Get-help panel until toggled', () => {
+        render(<EditEntityForm entity={baseEntity} entities={entities} onSave={jest.fn()} onCancel={jest.fn()} />);
+        expect(screen.queryByTestId('assist-chat-panel')).not.toBeInTheDocument();
+    });
+
+    it('toggles the Get-help panel and passes it the other entities and the live draft', async () => {
+        render(<EditEntityForm entity={baseEntity} entities={entities} onSave={jest.fn()} onCancel={jest.fn()} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /get help/i }));
+        expect(screen.getByTestId('assist-chat-panel')).toBeInTheDocument();
+        expect(screen.getByTestId('assist-entities')).toHaveTextContent('Frodo');
+        expect(screen.getByTestId('assist-entities')).not.toHaveTextContent('Gandalf');
+        expect(screen.getByTestId('assist-current-entity')).toHaveTextContent('Gandalf|A wise wizard of Middle-earth.');
+
+        fireEvent.click(screen.getByRole('button', { name: /hide help/i }));
+        expect(screen.queryByTestId('assist-chat-panel')).not.toBeInTheDocument();
+    });
+
+    it('passes the edited title and body to the Get-help panel as the current entity updates', async () => {
+        render(<EditEntityForm entity={baseEntity} entities={entities} onSave={jest.fn()} onCancel={jest.fn()} />);
+
+        const titleInput = screen.getByDisplayValue('Gandalf');
+        await userEvent.clear(titleInput);
+        await userEvent.type(titleInput, 'Gandalf the White');
+
+        fireEvent.click(screen.getByRole('button', { name: /get help/i }));
+        expect(screen.getByTestId('assist-current-entity')).toHaveTextContent('Gandalf the White|A wise wizard of Middle-earth.');
     });
 });
