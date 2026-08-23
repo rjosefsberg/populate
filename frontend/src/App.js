@@ -5,13 +5,13 @@ import EditEntityForm from "./components/EditEntityForm";
 import LoginPage from "./components/LoginPage";
 import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from "./api/entities";
 import { createAssociation } from "./api/associations";
-import { getProjects, createProject } from "./api/projects";
+import { getProjects, createProject, updateProject, deleteProject } from "./api/projects";
 import { getMe, logout, setUnauthorizedHandler } from "./api/client";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
 import UsageButton from "./components/UsageButton";
-import ProjectSelector from "./components/ProjectSelector";
+import SelectProjectPrompt from "./components/SelectProjectPrompt";
 
 function App() {
     const [authenticated, setAuthenticated] = useState(null); // null = loading
@@ -31,10 +31,7 @@ function App() {
 
     useEffect(() => {
         if (authenticated) {
-            getProjects().then(data => {
-                setProjects(data);
-                if (data.length > 0) setSelectedProjectId(data[0].id);
-            });
+            getProjects().then(data => setProjects(data));
         }
     }, [authenticated]);
 
@@ -49,8 +46,32 @@ function App() {
     const handleCreateProject = (name) => {
         createProject({ name }).then(newProject => {
             setProjects(prev => [...prev, newProject]);
-            setSelectedProjectId(newProject.id);
         });
+    };
+
+    const handleRenameProject = (id, name) => {
+        updateProject(id, { name }).then(updated => {
+            setProjects(prev => prev.map(p => p.id === id ? updated : p));
+        });
+    };
+
+    const handleDeleteProject = (id) => {
+        deleteProject(id).then(() => {
+            setProjects(prev => prev.filter(p => p.id !== id));
+            if (selectedProjectId === id) {
+                setSelectedProjectId(null);
+                setEntities([]);
+                setSelectedEntity(null);
+                setEditingEntity(null);
+            }
+        });
+    };
+
+    const handleBackToProjects = () => {
+        setSelectedProjectId(null);
+        setEntities([]);
+        setSelectedEntity(null);
+        setEditingEntity(null);
     };
 
     const handleLogout = () => {
@@ -117,27 +138,31 @@ function App() {
                 entities={entities}
             />
             <Sidebar
+                mode={selectedProjectId ? "entities" : "projects"}
+                projects={projects}
+                onOpenProject={setSelectedProjectId}
+                onCreateProject={handleCreateProject}
+                onRenameProject={handleRenameProject}
+                onDeleteProject={handleDeleteProject}
+                projectName={projects.find(p => p.id === selectedProjectId)?.name}
+                onBackToProjects={handleBackToProjects}
                 entities={entities}
                 selectedId={selectedEntity?.id}
                 onSelect={setSelectedEntity}
-                projectSelector={
-                    <ProjectSelector
-                        projects={projects}
-                        selectedId={selectedProjectId}
-                        onSelect={setSelectedProjectId}
-                        onCreate={handleCreateProject}
-                    />
+                footer={
+                    <button className="btn btn-outline-secondary btn-sm w-100" style={{ fontSize: "0.75rem" }} onClick={handleLogout}>
+                        Sign out
+                    </button>
                 }
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
                 <UsageButton />
-                <button className="btn btn-outline-secondary btn-sm w-100 mt-2" style={{ fontSize: "0.75rem" }} onClick={handleLogout}>
-                    Sign out
-                </button>
             </Sidebar>
 
             <div className="flex-grow-1">
-                {editingEntity ? (
+                {!selectedProjectId ? (
+                    <SelectProjectPrompt />
+                ) : editingEntity ? (
                     <div className="p-4">
                         <EditEntityForm
                             entity={editingEntity}
