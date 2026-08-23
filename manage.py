@@ -8,6 +8,7 @@ Usage:
   python manage.py build     # build React frontend for production
   python manage.py db        # run pending database migrations (SQLite)
   python manage.py test      # run backend (pytest) and frontend (jest) tests
+  python manage.py rebuild   # reinstall deps, migrate db, and rebuild the frontend
 """
 
 import argparse
@@ -158,22 +159,58 @@ def cmd_test():
         print("All tests passed.")
 
 
+def cmd_rebuild():
+    """Reinstall backend/frontend deps, migrate the db, and rebuild the frontend from scratch."""
+    if load_pids():
+        print("Stopping running servers…")
+        cmd_stop()
+        print()
+
+    print("=" * 50)
+    print("Installing backend dependencies")
+    print("=" * 50)
+    run_cmd([PYTHON, "-m", "pip", "install", "-r", "requirements.txt"], cwd=ROOT)
+
+    print()
+    print("=" * 50)
+    print("Installing frontend dependencies")
+    print("=" * 50)
+    npm = "npm.cmd" if sys.platform == "win32" else "npm"
+    run_cmd([npm, "install"], cwd=FRONTEND)
+
+    print()
+    print("=" * 50)
+    print("Migrating database")
+    print("=" * 50)
+    cmd_db()
+
+    print()
+    print("=" * 50)
+    print("Building frontend")
+    print("=" * 50)
+    cmd_build()
+
+    print()
+    print("Rebuild complete.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Populate app manager")
     parser.add_argument(
         "command",
-        choices=["start", "stop", "run", "build", "db", "test"],
+        choices=["start", "stop", "run", "build", "db", "test", "rebuild"],
         help="Command to run",
     )
     args = parser.parse_args()
 
     commands = {
-        "start": cmd_start,
-        "run":   cmd_start,
-        "stop":  cmd_stop,
-        "build": cmd_build,
-        "db":    cmd_db,
-        "test":  cmd_test,
+        "start":   cmd_start,
+        "run":     cmd_start,
+        "stop":    cmd_stop,
+        "build":   cmd_build,
+        "db":      cmd_db,
+        "test":    cmd_test,
+        "rebuild": cmd_rebuild,
     }
     commands[args.command]()
 
