@@ -44,7 +44,7 @@ class SettingsService:
             return ""
         if len(value) <= 4:
             return "•" * len(value)
-        return "•" * (len(value) - 4) + value[-4:]
+        return "••••" + value[-4:]
 
     @staticmethod
     def get_anthropic_api_key():

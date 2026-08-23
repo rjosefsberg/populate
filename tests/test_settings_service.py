@@ -8,7 +8,7 @@ def test_update_masks_value_resets_key_works_and_persists(app, clean_settings):
         result, err = SettingsService.update("anthropic_api_key", "sk-ant-abcd1234")
         assert err is None
         api_key_row = next(r for r in result["settings"] if r["key"] == "anthropic_api_key")
-        assert api_key_row["value"] == "•" * (len("sk-ant-abcd1234") - 4) + "1234"
+        assert api_key_row["value"] == "••••1234"
         assert result["api_key_populated"] is True
         assert result["key_works"] is False  # reset on change
 

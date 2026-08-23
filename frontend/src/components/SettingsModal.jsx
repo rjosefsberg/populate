@@ -61,19 +61,19 @@ function SettingsModal({ show, onHide, onSettingsChange }) {
                     <p className="text-muted mb-0">Loading…</p>
                 ) : (
                     <>
-                        <table className="table table-sm align-middle mb-3">
+                        <table className="table table-sm align-middle mb-3" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <thead>
                                 <tr>
-                                    <th>Setting</th>
-                                    <th>Value</th>
-                                    <th></th>
+                                    <th style={{ width: '35%' }}>Setting</th>
+                                    <th style={{ width: '40%' }}>Value</th>
+                                    <th style={{ width: '25%' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.settings.map(row => (
                                     <tr key={row.key}>
-                                        <td>{row.label}</td>
-                                        <td>
+                                        <td className="text-truncate">{row.label}</td>
+                                        <td className="text-truncate" title={typeof row.value === 'string' ? row.value : undefined}>
                                             {editingKey === row.key ? (
                                                 <input
                                                     autoFocus
