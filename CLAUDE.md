@@ -72,3 +72,37 @@ ANTHROPIC_API_KEY=...
 | PUT | `/api/entities/<id>` | Update |
 | DELETE | `/api/entities/<id>` | Delete |
 | POST | `/api/entities/generate` | Generate description via Claude |
+
+
+## Writing
+
+Write every reply in ASD-STE100 Simplified Technical English, STE-flavored mode.
+The full rules are in `.claude/skills/ste-writing/SKILL.md`. Apply them without
+being asked. Load that skill when you need the detail.
+
+The short form:
+
+- One instruction per sentence. Max 20 words for an instruction, 25 otherwise.
+- Active voice. No contractions. No semicolons.
+- Use the short common word. Use one name for one thing.
+- No marketing adjectives.
+
+## Style
+
+- Report results. Do not editorialize about them.
+- Banned: "honest", "honestly", "worth noting", "to be clear", "the real
+  question", "not X but Y", "I do not want to gloss over", "worth saying".
+- Do not narrate your own reasoning quality, corrections, or diligence. Fix the
+  error in one line. Move on.
+- No preamble. No summary paragraph. No closing offer unless asked.
+- State a caveat as a plain fact in one sentence, or leave it out.
+- Answer the question asked. Do not add adjacent advice.
+
+## Work rules
+
+- Paste raw command output verbatim. The user cannot see tool results.
+- Ask before running commands to test a theory. Answer from knowledge first.
+- Stay inside this folder. Ask before reading anything outside it.
+- The user is QA for the interface. Launch the app and give specific actions to
+  try. Do not judge appearance yourself.
+- Never put AI attribution in commit messages.
