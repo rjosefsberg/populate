@@ -1,5 +1,6 @@
 import re
 import bleach
+from bleach.css_sanitizer import CSSSanitizer
 from flask import jsonify
 
 VALID_ENTITY_TYPES = {"person", "place", "thing", "note"}
@@ -20,10 +21,25 @@ LIMITS = {
 
 # Tags/attributes allowed in a WYSIWYG-edited entity body. Anything else is stripped.
 ALLOWED_BODY_TAGS = [
-    "p", "br", "strong", "em", "b", "i", "u", "s", "strike",
+    "p", "br", "strong", "em", "b", "i", "u", "s", "strike", "span",
     "ul", "ol", "li", "h1", "h2", "h3", "blockquote", "code", "pre", "a",
+    "table", "thead", "tbody", "tr", "th", "td",
 ]
-ALLOWED_BODY_ATTRS = {"a": ["href", "target", "rel"]}
+_STYLED = ["style"]
+ALLOWED_BODY_ATTRS = {
+    "a": ["href", "target", "rel"],
+    "span": _STYLED,
+    "p": _STYLED,
+    "h1": _STYLED,
+    "h2": _STYLED,
+    "h3": _STYLED,
+    "th": _STYLED + ["colspan", "rowspan"],
+    "td": _STYLED + ["colspan", "rowspan"],
+}
+# Only these CSS properties survive in a `style` attribute — everything else (position,
+# behavior-affecting properties, etc.) is dropped by bleach's CSS sanitizer.
+ALLOWED_BODY_CSS_PROPERTIES = ["font-family", "font-size", "color", "text-align"]
+_CSS_SANITIZER = CSSSanitizer(allowed_css_properties=ALLOWED_BODY_CSS_PROPERTIES)
 
 _TAGS_RE = re.compile(r"<[^>]+>")
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -34,10 +50,16 @@ def strip_html(value: str) -> str:
 
 
 def clean_html_body(value, max_len: int) -> str:
-    """Sanitize WYSIWYG-editor HTML down to an allowlist of formatting tags."""
+    """Sanitize WYSIWYG-editor HTML down to an allowlist of formatting tags/styles."""
     value = str(value).strip()
     value = strip_control_chars(value)
-    value = bleach.clean(value, tags=ALLOWED_BODY_TAGS, attributes=ALLOWED_BODY_ATTRS, strip=True)
+    value = bleach.clean(
+        value,
+        tags=ALLOWED_BODY_TAGS,
+        attributes=ALLOWED_BODY_ATTRS,
+        css_sanitizer=_CSS_SANITIZER,
+        strip=True,
+    )
     return value[:max_len]
 
 

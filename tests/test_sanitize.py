@@ -101,6 +101,35 @@ def test_clean_html_body_truncates():
     assert len(clean_html_body("a" * 300, 200)) == 200
 
 
+def test_clean_html_body_keeps_tables():
+    html = "<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+    result = clean_html_body(html, 1000)
+    assert "<table>" in result
+    assert "<td>1</td>" in result
+
+
+def test_clean_html_body_keeps_allowed_inline_styles():
+    html = '<p style="font-family: Georgia; font-size: 20px; color: rgb(255, 0, 0); text-align: center;">Hi</p>'
+    result = clean_html_body(html, 1000)
+    assert "font-family: Georgia" in result
+    assert "font-size: 20px" in result
+    assert "color: rgb(255, 0, 0)" in result
+    assert "text-align: center" in result
+
+
+def test_clean_html_body_strips_disallowed_css_properties():
+    result = clean_html_body('<p style="position: fixed; color: red;">Hi</p>', 1000)
+    assert "position" not in result
+    assert "color: red" in result
+
+
+def test_clean_html_body_strips_style_from_disallowed_tags():
+    # style isn't in the allowlist for <li>, so it should be dropped even though the tag stays.
+    result = clean_html_body('<ul><li style="color: red;">item</li></ul>', 1000)
+    assert "<li>item</li>" in result
+    assert "style" not in result
+
+
 def test_clean_chat_messages_valid(app):
     with app.app_context():
         cleaned, err = clean_chat_messages([

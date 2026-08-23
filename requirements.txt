@@ -1,6 +1,7 @@
 anthropic
 bleach
 flask
+tinycss2
 flask-sqlalchemy
 flask-migrate
 flask-cors

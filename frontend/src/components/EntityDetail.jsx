@@ -27,7 +27,7 @@ function EntityDetail({ entity, onEdit, onDelete }) {
             </div>
 
             <div
-                className="mb-5"
+                className="mb-5 entity-body"
                 style={{ lineHeight: 1.7, color: '#333' }}
                 dangerouslySetInnerHTML={{ __html: entity.body }}
             />
