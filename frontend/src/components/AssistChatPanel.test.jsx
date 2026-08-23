@@ -29,7 +29,7 @@ describe('AssistChatPanel', () => {
 
         expect(chatWithAssistant).toHaveBeenCalledWith('person', 'fantasy', [
             { role: 'user', content: 'Give me an idea' },
-        ]);
+        ], []);
     });
 
     it('does not send an empty message', () => {
@@ -47,6 +47,55 @@ describe('AssistChatPanel', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/went wrong/i)).toBeInTheDocument();
+        });
+    });
+
+    it('does not show a context checklist when there are no entities', () => {
+        render(<AssistChatPanel entities={[]} />);
+        expect(screen.queryByText(/include entity in context/i)).not.toBeInTheDocument();
+    });
+
+    it('lets the user check entities to include as context and sends them', async () => {
+        chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
+        const entities = [
+            { id: 1, title: 'Gandalf', body: 'A wizard.' },
+            { id: 2, title: 'Frodo', body: 'A hobbit.' },
+        ];
+
+        render(<AssistChatPanel entities={entities} />);
+        expect(screen.getByText(/include entity in context/i)).toBeInTheDocument();
+
+        fireEvent.click(screen.getByLabelText('Gandalf'));
+        await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+
+        await waitFor(() => {
+            expect(chatWithAssistant).toHaveBeenCalledWith(
+                'person', 'fantasy',
+                [{ role: 'user', content: 'Give me an idea' }],
+                [{ title: 'Gandalf', body: 'A wizard.' }],
+            );
+        });
+    });
+
+    it('unchecking an entity removes it from context', async () => {
+        chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
+        const entities = [{ id: 1, title: 'Gandalf', body: 'A wizard.' }];
+
+        render(<AssistChatPanel entities={entities} />);
+        const checkbox = screen.getByLabelText('Gandalf');
+        fireEvent.click(checkbox);
+        fireEvent.click(checkbox);
+
+        await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+
+        await waitFor(() => {
+            expect(chatWithAssistant).toHaveBeenCalledWith(
+                'person', 'fantasy',
+                [{ role: 'user', content: 'Give me an idea' }],
+                [],
+            );
         });
     });
 });

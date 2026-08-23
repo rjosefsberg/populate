@@ -13,25 +13,34 @@ const GENRES = [
 
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 
-function AssistChatPanel() {
+function AssistChatPanel({ entities = [] }) {
     const [entityType, setEntityType] = useState("person");
     const [genre, setGenre] = useState("fantasy");
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [error, setError] = useState(null);
+    const [contextIds, setContextIds] = useState([]);
+
+    const toggleContext = (id) => {
+        setContextIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
 
     const handleSend = () => {
         const trimmed = input.trim();
         if (!trimmed || sending) return;
 
         const nextMessages = [...messages, { role: "user", content: trimmed }];
+        const contextEntities = entities
+            .filter(e => contextIds.includes(e.id))
+            .map(e => ({ title: e.title, body: e.body }));
+
         setMessages(nextMessages);
         setInput("");
         setSending(true);
         setError(null);
 
-        chatWithAssistant(entityType, genre, nextMessages)
+        chatWithAssistant(entityType, genre, nextMessages, contextEntities)
             .then(result => {
                 if (result.error) {
                     setError(result.error);
@@ -61,6 +70,30 @@ function AssistChatPanel() {
                     </select>
                 </div>
             </div>
+
+            {entities.length > 0 && (
+                <div className="mb-3">
+                    <label className="form-label text-uppercase fw-semibold d-block" style={labelStyle}>
+                        Include entity in context
+                    </label>
+                    <div className="border rounded p-2" style={{ maxHeight: 120, overflowY: "auto" }}>
+                        {entities.map(e => (
+                            <div className="form-check" key={e.id}>
+                                <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    id={`context-entity-${e.id}`}
+                                    checked={contextIds.includes(e.id)}
+                                    onChange={() => toggleContext(e.id)}
+                                />
+                                <label className="form-check-label small" htmlFor={`context-entity-${e.id}`}>
+                                    {e.title}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="flex-grow-1 overflow-auto mb-3 border rounded p-2" style={{ minHeight: 200, maxHeight: 320 }}>
                 {messages.length === 0 && (

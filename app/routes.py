@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from app.utils.sanitize import (
     require_json, validate_entity_type, validate_genre,
-    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, LIMITS,
+    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, clean_context_entities, LIMITS,
 )
 from app.auth import require_auth
 
@@ -113,8 +113,12 @@ def register_routes(app):
         if err:
             return err
 
+        context_entities, err = clean_context_entities(data.get("context_entities"))
+        if err:
+            return err
+
         try:
-            reply = AssistService.chat(entity_type, genre, messages)
+            reply = AssistService.chat(entity_type, genre, messages, context_entities)
         except Exception:
             return jsonify({"error": "Assistant is unavailable right now"}), 502
         return jsonify({"reply": reply}), 200

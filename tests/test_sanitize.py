@@ -1,6 +1,6 @@
 import pytest
 from app.utils.sanitize import (
-    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages,
+    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, clean_context_entities,
     strip_html, strip_control_chars,
     validate_entity_type, validate_genre, require_json,
 )
@@ -133,5 +133,41 @@ def test_clean_chat_messages_rejects_bad_role(app):
 def test_clean_chat_messages_requires_last_message_from_user(app):
     with app.app_context():
         cleaned, err = clean_chat_messages([{"role": "assistant", "content": "hi"}])
+        assert cleaned is None
+        assert err[1] == 400
+
+
+def test_clean_context_entities_none_returns_empty_list(app):
+    with app.app_context():
+        cleaned, err = clean_context_entities(None)
+        assert cleaned == []
+        assert err is None
+
+
+def test_clean_context_entities_strips_html_from_body(app):
+    with app.app_context():
+        cleaned, err = clean_context_entities([{"title": "Gandalf", "body": "<p>A <strong>wizard</strong>.</p>"}])
+        assert err is None
+        assert cleaned == [{"title": "Gandalf", "body": "A wizard."}]
+
+
+def test_clean_context_entities_rejects_non_list(app):
+    with app.app_context():
+        cleaned, err = clean_context_entities("not a list")
+        assert cleaned is None
+        assert err[1] == 400
+
+
+def test_clean_context_entities_requires_title(app):
+    with app.app_context():
+        cleaned, err = clean_context_entities([{"body": "no title"}])
+        assert cleaned is None
+        assert err[1] == 400
+
+
+def test_clean_context_entities_rejects_too_many(app):
+    with app.app_context():
+        entities = [{"title": f"Entity {i}", "body": ""} for i in range(11)]
+        cleaned, err = clean_context_entities(entities)
         assert cleaned is None
         assert err[1] == 400

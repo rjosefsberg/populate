@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 class AssistService:
 
     @staticmethod
-    def _build_system_prompt(entity_type, genre):
-        return (
+    def _build_system_prompt(entity_type, genre, context_entities=None):
+        prompt = (
             "You are a creative writing assistant embedded in a fantasy content generator app. "
             f"The user is drafting a {entity_type} for a {genre} setting and is writing the entity's "
             "description themselves in a rich-text editor. Help them brainstorm: suggest ideas, offer "
@@ -18,10 +18,22 @@ class AssistService:
             "few sentences unless they ask for more."
         )
 
+        if context_entities:
+            lines = "\n".join(
+                f"- {e['title']}: {e['body']}" if e.get('body') else f"- {e['title']}"
+                for e in context_entities
+            )
+            prompt += (
+                "\n\nThe user has included these existing entities from their project as context — "
+                f"weave them into your suggestions where relevant:\n{lines}"
+            )
+
+        return prompt
+
     @staticmethod
-    def chat(entity_type, genre, messages):
+    def chat(entity_type, genre, messages, context_entities=None):
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-        system_prompt = AssistService._build_system_prompt(entity_type, genre)
+        system_prompt = AssistService._build_system_prompt(entity_type, genre, context_entities)
 
         try:
             message = client.messages.create(

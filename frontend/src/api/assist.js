@@ -1,7 +1,12 @@
 import { apiFetch } from "./client";
 
-export const chatWithAssistant = (entityType, genre, messages) =>
+export const chatWithAssistant = (entityType, genre, messages, contextEntities = []) =>
     apiFetch("/api/assist/chat", {
         method: "POST",
-        body: JSON.stringify({ entity_type: entityType, genre, messages }),
+        body: JSON.stringify({
+            entity_type: entityType,
+            genre,
+            messages,
+            ...(contextEntities.length ? { context_entities: contextEntities } : {}),
+        }),
     }).then(res => res.json());

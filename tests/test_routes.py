@@ -288,7 +288,9 @@ def test_assist_chat_calls_service_with_correct_args(auth_client, db):
             content_type="application/json")
 
     assert response.status_code == 200
-    mock_chat.assert_called_once_with("person", "fantasy", [{"role": "user", "content": "Give me an idea for a wizard"}])
+    mock_chat.assert_called_once_with(
+        "person", "fantasy", [{"role": "user", "content": "Give me an idea for a wizard"}], []
+    )
     assert response.get_json()["reply"] == "Here's an idea..."
 
 
@@ -305,6 +307,49 @@ def test_assist_chat_invalid_entity_type_returns_400(auth_client, db):
             "entity_type": "dragon",
             "genre": "fantasy",
             "messages": [{"role": "user", "content": "hi"}],
+        }),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_assist_chat_includes_context_entities(auth_client, db):
+    with patch("app.services.assist_service.AssistService.chat") as mock_chat:
+        mock_chat.return_value = "Here's an idea..."
+        response = auth_client.post("/api/assist/chat",
+            data=json.dumps({
+                "entity_type": "person",
+                "genre": "fantasy",
+                "messages": [{"role": "user", "content": "hi"}],
+                "context_entities": [{"title": "Gandalf", "body": "<p>A wizard.</p>"}],
+            }),
+            content_type="application/json")
+
+    assert response.status_code == 200
+    mock_chat.assert_called_once_with(
+        "person", "fantasy", [{"role": "user", "content": "hi"}],
+        [{"title": "Gandalf", "body": "A wizard."}],
+    )
+
+
+def test_assist_chat_context_entities_must_be_a_list(auth_client, db):
+    response = auth_client.post("/api/assist/chat",
+        data=json.dumps({
+            "entity_type": "person",
+            "genre": "fantasy",
+            "messages": [{"role": "user", "content": "hi"}],
+            "context_entities": "not a list",
+        }),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_assist_chat_context_entity_requires_title(auth_client, db):
+    response = auth_client.post("/api/assist/chat",
+        data=json.dumps({
+            "entity_type": "person",
+            "genre": "fantasy",
+            "messages": [{"role": "user", "content": "hi"}],
+            "context_entities": [{"body": "no title"}],
         }),
         content_type="application/json")
     assert response.status_code == 400

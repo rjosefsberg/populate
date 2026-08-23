@@ -14,6 +14,8 @@ LIMITS = {
     "hint":        500,
     "chat_message": 4_000,
     "chat_history": 40,
+    "context_entities": 10,
+    "context_body": 2_000,
 }
 
 # Tags/attributes allowed in a WYSIWYG-edited entity body. Anything else is stripped.
@@ -98,5 +100,27 @@ def clean_chat_messages(raw_messages):
 
     if cleaned[-1]["role"] != "user":
         return None, (jsonify({"error": "the last message must be from the user"}), 400)
+
+    return cleaned, None
+
+
+def clean_context_entities(raw_entities):
+    """Validate and clean the list of existing entities included as chat context. Returns (entities, error_response)."""
+    if raw_entities is None:
+        return [], None
+    if not isinstance(raw_entities, list):
+        return None, (jsonify({"error": "context_entities must be a list"}), 400)
+    if len(raw_entities) > LIMITS["context_entities"]:
+        return None, (jsonify({"error": f"context_entities cannot exceed {LIMITS['context_entities']} entries"}), 400)
+
+    cleaned = []
+    for e in raw_entities:
+        if not isinstance(e, dict):
+            return None, (jsonify({"error": "each context entity must be an object"}), 400)
+        title = clean_prompt_text(e.get("title", ""), LIMITS["title"])
+        if not title:
+            return None, (jsonify({"error": "each context entity needs a title"}), 400)
+        body = clean_prompt_text(strip_html(e.get("body", "")), LIMITS["context_body"])
+        cleaned.append({"title": title, "body": body})
 
     return cleaned, None

@@ -136,7 +136,7 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
 
                     {helpOpen && (
                         <div className="border-start ps-4" style={{ width: 340, flexShrink: 0 }}>
-                            <AssistChatPanel />
+                            <AssistChatPanel entities={entities} />
                         </div>
                     )}
                 </div>

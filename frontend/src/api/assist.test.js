@@ -25,4 +25,21 @@ describe('chatWithAssistant', () => {
         expect(body).toEqual({ entity_type: 'person', genre: 'fantasy', messages });
         expect(result).toEqual({ reply: 'Here is an idea.' });
     });
+
+    it('includes context_entities when provided', async () => {
+        const messages = [{ role: 'user', content: 'Give me an idea' }];
+        const contextEntities = [{ title: 'Gandalf', body: 'A wizard.' }];
+        await chatWithAssistant('person', 'fantasy', messages, contextEntities);
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(body.context_entities).toEqual(contextEntities);
+    });
+
+    it('omits context_entities when empty', async () => {
+        const messages = [{ role: 'user', content: 'Give me an idea' }];
+        await chatWithAssistant('person', 'fantasy', messages, []);
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(body).not.toHaveProperty('context_entities');
+    });
 });
