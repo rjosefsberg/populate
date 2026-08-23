@@ -1,6 +1,9 @@
-function Sidebar({ entities, selectedId, onSelect, children }) {
+function Sidebar({ entities, selectedId, onSelect, projectSelector, children }) {
     return (
         <div className="d-flex flex-column bg-dark text-white p-3" style={{ width: "250px", minHeight: "100vh" }}>
+            {/* Project selector */}
+            {projectSelector}
+
             {/* Generate form at the top */}
             {children}
 

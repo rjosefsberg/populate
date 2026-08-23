@@ -6,8 +6,13 @@ from app.models.association import Association
 from app import db as _db
 
 
-def make_entity(db, title="Test Entity", body="Test body"):
-    entity = Entity(title=title, body=body)
+def make_entity(db, title="Test Entity", body="Test body", project=None):
+    if project is None:
+        from app.models.project import Project
+        project = Project(name="Untitled Project")
+        db.session.add(project)
+        db.session.commit()
+    entity = Entity(title=title, body=body, project_id=project.id)
     db.session.add(entity)
     db.session.commit()
     return entity
@@ -15,9 +20,9 @@ def make_entity(db, title="Test Entity", body="Test body"):
 
 # --- Entity routes ---
 
-def test_get_entities_returns_list(auth_client, db):
-    make_entity(db, "Gandalf")
-    make_entity(db, "Frodo")
+def test_get_entities_returns_list(auth_client, db, project):
+    make_entity(db, "Gandalf", project=project)
+    make_entity(db, "Frodo", project=project)
     response = auth_client.get("/api/entities")
     assert response.status_code == 200
     data = response.get_json()
@@ -31,19 +36,20 @@ def test_get_entities_empty(auth_client, db):
     assert response.get_json() == []
 
 
-def test_create_entity_returns_201(auth_client, db):
+def test_create_entity_returns_201(auth_client, db, project):
     response = auth_client.post("/api/entities",
-        data=json.dumps({"title": "Aragorn", "body": "A ranger from the north."}),
+        data=json.dumps({"title": "Aragorn", "body": "A ranger from the north.", "project_id": project.id}),
         content_type="application/json")
     assert response.status_code == 201
     data = response.get_json()
     assert data["title"] == "Aragorn"
     assert data["body"] == "A ranger from the north."
+    assert data["project_id"] == project.id
     assert "id" in data
 
 
-def test_get_entity_by_id(auth_client, db):
-    entity = make_entity(db, "Legolas", "An elf archer.")
+def test_get_entity_by_id(auth_client, db, project):
+    entity = make_entity(db, "Legolas", "An elf archer.", project=project)
     response = auth_client.get(f"/api/entities/{entity.id}")
     assert response.status_code == 200
     data = response.get_json()
@@ -56,8 +62,8 @@ def test_get_entity_not_found(auth_client, db):
     assert response.status_code == 404
 
 
-def test_update_entity(auth_client, db):
-    entity = make_entity(db, "Legolas")
+def test_update_entity(auth_client, db, project):
+    entity = make_entity(db, "Legolas", project=project)
     response = auth_client.put(f"/api/entities/{entity.id}",
         data=json.dumps({"title": "Legolas Greenleaf", "body": "Updated body."}),
         content_type="application/json")
@@ -66,16 +72,16 @@ def test_update_entity(auth_client, db):
     assert data["title"] == "Legolas Greenleaf"
 
 
-def test_delete_entity_returns_200(auth_client, db):
-    entity = make_entity(db)
+def test_delete_entity_returns_200(auth_client, db, project):
+    entity = make_entity(db, project=project)
     response = auth_client.delete(f"/api/entities/{entity.id}")
     assert response.status_code == 200
     data = response.get_json()
     assert "message" in data
 
 
-def test_delete_entity_removes_it(auth_client, db):
-    entity = make_entity(db)
+def test_delete_entity_removes_it(auth_client, db, project):
+    entity = make_entity(db, project=project)
     auth_client.delete(f"/api/entities/{entity.id}")
     response = auth_client.get(f"/api/entities/{entity.id}")
     assert response.status_code == 404
@@ -83,9 +89,9 @@ def test_delete_entity_removes_it(auth_client, db):
 
 # --- Association routes ---
 
-def test_get_associations_for_entity(auth_client, db):
-    e1 = make_entity(db, "Gandalf")
-    e2 = make_entity(db, "Frodo")
+def test_get_associations_for_entity(auth_client, db, project):
+    e1 = make_entity(db, "Gandalf", project=project)
+    e2 = make_entity(db, "Frodo", project=project)
     assoc = Association(entity_id_1=e1.id, entity_id_2=e2.id, description="companions")
     db.session.add(assoc)
     db.session.commit()
@@ -97,9 +103,9 @@ def test_get_associations_for_entity(auth_client, db):
     assert data[0]["description"] == "companions"
 
 
-def test_create_association(auth_client, db):
-    e1 = make_entity(db, "Gandalf")
-    e2 = make_entity(db, "Frodo")
+def test_create_association(auth_client, db, project):
+    e1 = make_entity(db, "Gandalf", project=project)
+    e2 = make_entity(db, "Frodo", project=project)
     response = auth_client.post("/api/associations",
         data=json.dumps({"entity_id_1": e1.id, "entity_id_2": e2.id, "description": "mentor"}),
         content_type="application/json")
@@ -108,9 +114,9 @@ def test_create_association(auth_client, db):
     assert data["description"] == "mentor"
 
 
-def test_delete_association(auth_client, db):
-    e1 = make_entity(db, "Gandalf")
-    e2 = make_entity(db, "Frodo")
+def test_delete_association(auth_client, db, project):
+    e1 = make_entity(db, "Gandalf", project=project)
+    e2 = make_entity(db, "Frodo", project=project)
     assoc = Association(entity_id_1=e1.id, entity_id_2=e2.id, description="companions")
     db.session.add(assoc)
     db.session.commit()
@@ -224,8 +230,15 @@ def test_generate_missing_prompt_returns_400(auth_client, db):
     assert response.status_code == 400
 
 
-def test_create_association_self_link_returns_400(auth_client, db):
-    entity = make_entity(db)
+def test_create_entity_missing_project_id_returns_400(auth_client, db):
+    response = auth_client.post("/api/entities",
+        data=json.dumps({"title": "A title", "body": "A body"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_association_self_link_returns_400(auth_client, db, project):
+    entity = make_entity(db, project=project)
     response = auth_client.post("/api/associations",
         data=json.dumps({"entity_id_1": entity.id, "entity_id_2": entity.id, "description": "self"}),
         content_type="application/json")
@@ -239,9 +252,9 @@ def test_create_association_invalid_ids_returns_400(auth_client, db):
     assert response.status_code == 400
 
 
-def test_html_in_title_is_stripped(auth_client, db):
+def test_html_in_title_is_stripped(auth_client, db, project):
     response = auth_client.post("/api/entities",
-        data=json.dumps({"title": "<b>Bold Name</b>", "body": "A body."}),
+        data=json.dumps({"title": "<b>Bold Name</b>", "body": "A body.", "project_id": project.id}),
         content_type="application/json")
     assert response.status_code == 201
     assert response.get_json()["title"] == "Bold Name"

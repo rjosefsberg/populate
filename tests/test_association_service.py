@@ -6,7 +6,11 @@ from app import db as _db
 
 
 def make_entity(db, title, body="Some body text"):
-    entity = Entity(title=title, body=body)
+    from app.models.project import Project
+    project = Project(name="Untitled Project")
+    db.session.add(project)
+    db.session.commit()
+    entity = Entity(title=title, body=body, project_id=project.id)
     db.session.add(entity)
     db.session.commit()
     return entity

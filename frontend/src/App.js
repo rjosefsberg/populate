@@ -5,14 +5,18 @@ import EditEntityForm from "./components/EditEntityForm";
 import LoginPage from "./components/LoginPage";
 import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from "./api/entities";
 import { createAssociation } from "./api/associations";
+import { getProjects, createProject } from "./api/projects";
 import { getMe, logout, setUnauthorizedHandler } from "./api/client";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
 import UsageButton from "./components/UsageButton";
+import ProjectSelector from "./components/ProjectSelector";
 
 function App() {
     const [authenticated, setAuthenticated] = useState(null); // null = loading
+    const [projects, setProjects] = useState([]);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [entities, setEntities] = useState([]);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
@@ -27,13 +31,33 @@ function App() {
 
     useEffect(() => {
         if (authenticated) {
-            getEntities().then(data => setEntities(data));
+            getProjects().then(data => {
+                setProjects(data);
+                if (data.length > 0) setSelectedProjectId(data[0].id);
+            });
         }
     }, [authenticated]);
+
+    useEffect(() => {
+        if (authenticated && selectedProjectId) {
+            getEntities(selectedProjectId).then(data => setEntities(data));
+            setSelectedEntity(null);
+            setEditingEntity(null);
+        }
+    }, [authenticated, selectedProjectId]);
+
+    const handleCreateProject = (name) => {
+        createProject({ name }).then(newProject => {
+            setProjects(prev => [...prev, newProject]);
+            setSelectedProjectId(newProject.id);
+        });
+    };
 
     const handleLogout = () => {
         logout().then(() => {
             setAuthenticated(false);
+            setProjects([]);
+            setSelectedProjectId(null);
             setEntities([]);
             setSelectedEntity(null);
             setEditingEntity(null);
@@ -45,7 +69,7 @@ function App() {
     };
 
     const handleConfirm = (title, description, associations) => {
-        createEntity({ title, body: description })
+        createEntity({ title, body: description, project_id: selectedProjectId })
             .then(newEntity => {
                 const valid = (associations || []).filter(a => a.entityId);
                 return Promise.all(
@@ -96,6 +120,14 @@ function App() {
                 entities={entities}
                 selectedId={selectedEntity?.id}
                 onSelect={setSelectedEntity}
+                projectSelector={
+                    <ProjectSelector
+                        projects={projects}
+                        selectedId={selectedProjectId}
+                        onSelect={setSelectedProjectId}
+                        onCreate={handleCreateProject}
+                    />
+                }
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
                 <UsageButton />
