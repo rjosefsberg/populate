@@ -9,6 +9,11 @@ jest.mock('../api/associations', () => ({
     deleteAssociation: jest.fn(),
 }));
 
+// The rich-text editor is exercised in its own test suite; stub it here as a plain textarea.
+jest.mock('./RichTextEditor', () => ({ value, onChange }) => (
+    <textarea aria-label="body" value={value} onChange={e => onChange(e.target.value)} />
+));
+
 import { createAssociation, deleteAssociation } from '../api/associations';
 
 const baseEntity = {

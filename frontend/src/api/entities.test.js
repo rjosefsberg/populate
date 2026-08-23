@@ -1,4 +1,4 @@
-import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from './entities';
+import { getEntities, createEntity, updateEntity, deleteEntity } from './entities';
 
 beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
@@ -67,42 +67,5 @@ describe('deleteEntity', () => {
             method: 'DELETE',
             credentials: 'include',
         }));
-    });
-});
-
-describe('generateEntity', () => {
-    it('calls POST /api/entities/generate with required fields', async () => {
-        mockFetch({ description: 'A brave warrior.' });
-        const result = await generateEntity('person', 'Arthur', 'fantasy');
-        expect(fetch).toHaveBeenCalledWith('/api/entities/generate', expect.objectContaining({
-            method: 'POST',
-            credentials: 'include',
-        }));
-        const body = JSON.parse(fetch.mock.calls[0][1].body);
-        expect(body.entity_type).toBe('person');
-        expect(body.prompt).toBe('Arthur');
-        expect(body.genre).toBe('fantasy');
-        expect(result).toEqual({ description: 'A brave warrior.' });
-    });
-
-    it('defaults genre to fantasy when not provided', async () => {
-        mockFetch({ description: 'A wise mage.' });
-        await generateEntity('person', 'Merlin');
-        const body = JSON.parse(fetch.mock.calls[0][1].body);
-        expect(body.genre).toBe('fantasy');
-    });
-
-    it('includes hint when provided', async () => {
-        mockFetch({ description: 'A dark figure.' });
-        await generateEntity('person', 'Merlin', 'fantasy', 'make it dark');
-        const body = JSON.parse(fetch.mock.calls[0][1].body);
-        expect(body.hint).toBe('make it dark');
-    });
-
-    it('does not include hint when null', async () => {
-        mockFetch({ description: 'A figure.' });
-        await generateEntity('person', 'Merlin', 'fantasy', null);
-        const body = JSON.parse(fetch.mock.calls[0][1].body);
-        expect(body).not.toHaveProperty('hint');
     });
 });

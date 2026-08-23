@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "react-bootstrap/Button";
 import { createAssociation, deleteAssociation } from "../api/associations";
+import RichTextEditor from "./RichTextEditor";
 
 function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChange }) {
     const [title, setTitle] = useState(entity.title);
@@ -59,13 +60,8 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
             </div>
 
             <div className="mb-5">
-                <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Description</label>
-                <textarea
-                    className="form-control border-0 border-bottom rounded-0 px-0"
-                    style={{ resize: 'none', boxShadow: 'none', minHeight: 160 }}
-                    value={body}
-                    onChange={e => setBody(e.target.value)}
-                />
+                <label className="form-label text-uppercase fw-semibold d-block" style={labelStyle}>Description</label>
+                <RichTextEditor value={body} onChange={setBody} />
             </div>
 
             <div>

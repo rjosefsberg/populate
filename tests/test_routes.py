@@ -260,6 +260,56 @@ def test_html_in_title_is_stripped(auth_client, db, project):
     assert response.get_json()["title"] == "Bold Name"
 
 
+def test_body_allows_formatting_tags_but_strips_scripts(auth_client, db, project):
+    response = auth_client.post("/api/entities",
+        data=json.dumps({
+            "title": "A title",
+            "body": "<p><strong>Bold</strong></p><script>alert(1)</script>",
+            "project_id": project.id,
+        }),
+        content_type="application/json")
+    assert response.status_code == 201
+    body = response.get_json()["body"]
+    assert "<strong>Bold</strong>" in body
+    assert "<script>" not in body
+
+
+# --- Assist chat route ---
+
+def test_assist_chat_calls_service_with_correct_args(auth_client, db):
+    with patch("app.services.assist_service.AssistService.chat") as mock_chat:
+        mock_chat.return_value = "Here's an idea..."
+        response = auth_client.post("/api/assist/chat",
+            data=json.dumps({
+                "entity_type": "person",
+                "genre": "fantasy",
+                "messages": [{"role": "user", "content": "Give me an idea for a wizard"}],
+            }),
+            content_type="application/json")
+
+    assert response.status_code == 200
+    mock_chat.assert_called_once_with("person", "fantasy", [{"role": "user", "content": "Give me an idea for a wizard"}])
+    assert response.get_json()["reply"] == "Here's an idea..."
+
+
+def test_assist_chat_missing_messages_returns_400(auth_client, db):
+    response = auth_client.post("/api/assist/chat",
+        data=json.dumps({"entity_type": "person", "genre": "fantasy"}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_assist_chat_invalid_entity_type_returns_400(auth_client, db):
+    response = auth_client.post("/api/assist/chat",
+        data=json.dumps({
+            "entity_type": "dragon",
+            "genre": "fantasy",
+            "messages": [{"role": "user", "content": "hi"}],
+        }),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
 # --- Auth routes ---
 
 def test_login_with_correct_password(client, db):

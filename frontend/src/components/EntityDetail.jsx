@@ -18,7 +18,11 @@ function EntityDetail({ entity, onEdit, onDelete }) {
                 </div>
             </div>
 
-            <p className="mb-5" style={{ lineHeight: 1.7, color: '#333' }}>{entity.body}</p>
+            <div
+                className="mb-5"
+                style={{ lineHeight: 1.7, color: '#333' }}
+                dangerouslySetInnerHTML={{ __html: entity.body }}
+            />
 
             {associations.length > 0 && (
                 <div>

@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from app.utils.sanitize import (
     require_json, validate_entity_type, validate_genre,
-    clean_text, clean_prompt_text, LIMITS,
+    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, LIMITS,
 )
 from app.auth import require_auth
 
@@ -93,6 +93,32 @@ def register_routes(app):
             return jsonify({"error": str(e)}), 502
         return jsonify(result), 200
 
+    @app.route("/api/assist/chat", methods=["POST"])
+    @require_auth
+    def assist_chat():
+        from app.services.assist_service import AssistService
+        data = request.get_json()
+        if (err := require_json(data)):
+            return err
+
+        entity_type = clean_text(data.get("entity_type", ""), 50)
+        if (err := validate_entity_type(entity_type)):
+            return err
+
+        genre = clean_text(data.get("genre", "fantasy"), 50)
+        if (err := validate_genre(genre)):
+            return err
+
+        messages, err = clean_chat_messages(data.get("messages"))
+        if err:
+            return err
+
+        try:
+            reply = AssistService.chat(entity_type, genre, messages)
+        except Exception:
+            return jsonify({"error": "Assistant is unavailable right now"}), 502
+        return jsonify({"reply": reply}), 200
+
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])
     @require_auth
     def get_entity(entity_id):
@@ -117,7 +143,7 @@ def register_routes(app):
 
         entity = EntityService.create({
             "title": clean_text(data["title"], LIMITS["title"]),
-            "body":  clean_text(data["body"],  LIMITS["body"]),
+            "body":  clean_html_body(data["body"], LIMITS["body"]),
             "project_id": project_id,
         })
         return jsonify(entity), 201
@@ -134,7 +160,7 @@ def register_routes(app):
         if "title" in data:
             cleaned["title"] = clean_text(data["title"], LIMITS["title"])
         if "body" in data:
-            cleaned["body"] = clean_text(data["body"], LIMITS["body"])
+            cleaned["body"] = clean_html_body(data["body"], LIMITS["body"])
 
         entity = EntityService.update(entity_id, cleaned)
         return jsonify(entity), 200

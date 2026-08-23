@@ -1,4 +1,5 @@
 anthropic
+bleach
 flask
 flask-sqlalchemy
 flask-migrate

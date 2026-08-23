@@ -1,6 +1,7 @@
 import pytest
 from app.utils.sanitize import (
-    clean_text, clean_prompt_text, strip_html, strip_control_chars,
+    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages,
+    strip_html, strip_control_chars,
     validate_entity_type, validate_genre, require_json,
 )
 
@@ -78,3 +79,59 @@ def test_require_json_returns_400_for_none(app):
 def test_require_json_returns_none_for_valid_data(app):
     with app.app_context():
         assert require_json({"key": "value"}) is None
+
+
+def test_clean_html_body_keeps_allowed_formatting_tags():
+    result = clean_html_body("<p><strong>Bold</strong> and <em>italic</em></p>", 1000)
+    assert result == "<p><strong>Bold</strong> and <em>italic</em></p>"
+
+
+def test_clean_html_body_strips_disallowed_tags():
+    result = clean_html_body("<script>alert('xss')</script><p>safe</p>", 1000)
+    assert "<script>" not in result
+    assert "<p>safe</p>" in result
+
+
+def test_clean_html_body_strips_disallowed_attributes():
+    result = clean_html_body('<p onclick="evil()">text</p>', 1000)
+    assert "onclick" not in result
+
+
+def test_clean_html_body_truncates():
+    assert len(clean_html_body("a" * 300, 200)) == 200
+
+
+def test_clean_chat_messages_valid(app):
+    with app.app_context():
+        cleaned, err = clean_chat_messages([
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi there"},
+            {"role": "user", "content": "help me"},
+        ])
+        assert err is None
+        assert cleaned == [
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi there"},
+            {"role": "user", "content": "help me"},
+        ]
+
+
+def test_clean_chat_messages_rejects_empty_list(app):
+    with app.app_context():
+        cleaned, err = clean_chat_messages([])
+        assert cleaned is None
+        assert err[1] == 400
+
+
+def test_clean_chat_messages_rejects_bad_role(app):
+    with app.app_context():
+        cleaned, err = clean_chat_messages([{"role": "system", "content": "hi"}])
+        assert cleaned is None
+        assert err[1] == 400
+
+
+def test_clean_chat_messages_requires_last_message_from_user(app):
+    with app.app_context():
+        cleaned, err = clean_chat_messages([{"role": "assistant", "content": "hi"}])
+        assert cleaned is None
+        assert err[1] == 400

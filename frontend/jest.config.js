@@ -9,7 +9,7 @@ module.exports = {
     '^.+\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }]
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(react-bootstrap)/)'
+    '/node_modules/(?!(react-bootstrap|@tiptap|prosemirror-.*)/)'
   ],
   moduleNameMapper: {
     '\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/fileMock.js',

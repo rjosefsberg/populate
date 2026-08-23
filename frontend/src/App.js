@@ -3,7 +3,7 @@ import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
 import EditEntityForm from "./components/EditEntityForm";
 import LoginPage from "./components/LoginPage";
-import { getEntities, createEntity, updateEntity, deleteEntity, generateEntity } from "./api/entities";
+import { getEntities, createEntity, updateEntity, deleteEntity } from "./api/entities";
 import { createAssociation } from "./api/associations";
 import { getProjects, createProject, updateProject, deleteProject } from "./api/projects";
 import { getMe, logout, setUnauthorizedHandler } from "./api/client";
@@ -85,10 +85,6 @@ function App() {
         });
     };
 
-    const handleGenerate = (prompt, entityType, genre = "fantasy", hint = null, promptAssociations = []) => {
-        return generateEntity(entityType, prompt, genre, hint, promptAssociations);
-    };
-
     const handleConfirm = (title, description, associations) => {
         createEntity({ title, body: description, project_id: selectedProjectId })
             .then(newEntity => {
@@ -133,7 +129,6 @@ function App() {
             <AddEntityModal
                 show={modalShow}
                 onHide={() => setModalShow(false)}
-                onGenerate={handleGenerate}
                 onConfirm={handleConfirm}
                 entities={entities}
             />
