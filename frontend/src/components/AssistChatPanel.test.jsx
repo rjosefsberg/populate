@@ -50,12 +50,12 @@ describe('AssistChatPanel', () => {
         });
     });
 
-    it('does not show a context checklist when there are no entities', () => {
+    it('does not show a context multiselect when there are no entities and no current entity', () => {
         render(<AssistChatPanel entities={[]} />);
         expect(screen.queryByText(/include entity in context/i)).not.toBeInTheDocument();
     });
 
-    it('lets the user check entities to include as context and sends them', async () => {
+    it('lets the user select entities to include as context and sends them', async () => {
         chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
         const entities = [
             { id: 1, title: 'Gandalf', body: 'A wizard.' },
@@ -65,7 +65,7 @@ describe('AssistChatPanel', () => {
         render(<AssistChatPanel entities={entities} />);
         expect(screen.getByText(/include entity in context/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByLabelText('Gandalf'));
+        await userEvent.selectOptions(screen.getByRole('listbox'), ['Gandalf']);
         await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
         fireEvent.click(screen.getByRole('button', { name: /send/i }));
 
@@ -78,14 +78,14 @@ describe('AssistChatPanel', () => {
         });
     });
 
-    it('unchecking an entity removes it from context', async () => {
+    it('deselecting an entity removes it from context', async () => {
         chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
         const entities = [{ id: 1, title: 'Gandalf', body: 'A wizard.' }];
 
         render(<AssistChatPanel entities={entities} />);
-        const checkbox = screen.getByLabelText('Gandalf');
-        fireEvent.click(checkbox);
-        fireEvent.click(checkbox);
+        const listbox = screen.getByRole('listbox');
+        await userEvent.selectOptions(listbox, ['Gandalf']);
+        await userEvent.deselectOptions(listbox, ['Gandalf']);
 
         await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
         fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -95,6 +95,33 @@ describe('AssistChatPanel', () => {
                 'person', 'fantasy',
                 [{ role: 'user', content: 'Give me an idea' }],
                 [],
+            );
+        });
+    });
+
+    it('offers the current in-progress entity as a context option', () => {
+        render(<AssistChatPanel entities={[]} currentEntity={{ title: 'Aragorn', body: 'A ranger.' }} />);
+        expect(screen.getByText('Aragorn (this entity)')).toBeInTheDocument();
+    });
+
+    it('does not offer the current entity as an option when it has no title yet', () => {
+        render(<AssistChatPanel entities={[]} currentEntity={{ title: '', body: '' }} />);
+        expect(screen.queryByText(/include entity in context/i)).not.toBeInTheDocument();
+    });
+
+    it('sends the current entity title and body when selected as context', async () => {
+        chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
+
+        render(<AssistChatPanel entities={[]} currentEntity={{ title: 'Aragorn', body: 'A ranger.' }} />);
+        await userEvent.selectOptions(screen.getByRole('listbox'), ['Aragorn (this entity)']);
+        await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+
+        await waitFor(() => {
+            expect(chatWithAssistant).toHaveBeenCalledWith(
+                'person', 'fantasy',
+                [{ role: 'user', content: 'Give me an idea' }],
+                [{ title: 'Aragorn', body: 'A ranger.' }],
             );
         });
     });

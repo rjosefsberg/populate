@@ -12,8 +12,9 @@ const GENRES = [
 ];
 
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
+const CURRENT_ENTITY_ID = "__current__";
 
-function AssistChatPanel({ entities = [] }) {
+function AssistChatPanel({ entities = [], currentEntity }) {
     const [entityType, setEntityType] = useState("person");
     const [genre, setGenre] = useState("fantasy");
     const [messages, setMessages] = useState([]);
@@ -22,8 +23,16 @@ function AssistChatPanel({ entities = [] }) {
     const [error, setError] = useState(null);
     const [contextIds, setContextIds] = useState([]);
 
-    const toggleContext = (id) => {
-        setContextIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    const hasCurrentEntity = currentEntity && (currentEntity.title || '').trim();
+    const contextOptions = [
+        ...(hasCurrentEntity
+            ? [{ id: CURRENT_ENTITY_ID, label: `${currentEntity.title.trim()} (this entity)`, title: currentEntity.title.trim(), body: currentEntity.body }]
+            : []),
+        ...entities.map(e => ({ id: e.id, label: e.title, title: e.title, body: e.body })),
+    ];
+
+    const handleContextChange = (e) => {
+        setContextIds(Array.from(e.target.selectedOptions).map(o => o.value));
     };
 
     const handleSend = () => {
@@ -31,8 +40,8 @@ function AssistChatPanel({ entities = [] }) {
         if (!trimmed || sending) return;
 
         const nextMessages = [...messages, { role: "user", content: trimmed }];
-        const contextEntities = entities
-            .filter(e => contextIds.includes(e.id))
+        const contextEntities = contextOptions
+            .filter(e => contextIds.includes(String(e.id)))
             .map(e => ({ title: e.title, body: e.body }));
 
         setMessages(nextMessages);
@@ -71,27 +80,23 @@ function AssistChatPanel({ entities = [] }) {
                 </div>
             </div>
 
-            {entities.length > 0 && (
+            {contextOptions.length > 0 && (
                 <div className="mb-3">
                     <label className="form-label text-uppercase fw-semibold d-block" style={labelStyle}>
                         Include entity in context
                     </label>
-                    <div className="border rounded p-2" style={{ maxHeight: 120, overflowY: "auto" }}>
-                        {entities.map(e => (
-                            <div className="form-check" key={e.id}>
-                                <input
-                                    type="checkbox"
-                                    className="form-check-input"
-                                    id={`context-entity-${e.id}`}
-                                    checked={contextIds.includes(e.id)}
-                                    onChange={() => toggleContext(e.id)}
-                                />
-                                <label className="form-check-label small" htmlFor={`context-entity-${e.id}`}>
-                                    {e.title}
-                                </label>
-                            </div>
+                    <select
+                        multiple
+                        className="form-select form-select-sm"
+                        size={Math.min(5, contextOptions.length)}
+                        value={contextIds}
+                        onChange={handleContextChange}
+                    >
+                        {contextOptions.map(e => (
+                            <option key={e.id} value={e.id}>{e.label}</option>
                         ))}
-                    </div>
+                    </select>
+                    <p className="text-muted mb-0 mt-1" style={{ fontSize: '0.7rem' }}>Ctrl/Cmd-click to select multiple.</p>
                 </div>
             )}
 
