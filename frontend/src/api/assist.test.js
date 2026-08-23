@@ -13,23 +13,23 @@ afterEach(() => {
 });
 
 describe('chatWithAssistant', () => {
-    it('calls POST /api/assist/chat with entity type, genre, and messages', async () => {
+    it('calls POST /api/assist/chat with entity type and messages', async () => {
         const messages = [{ role: 'user', content: 'Give me an idea' }];
-        const result = await chatWithAssistant('person', 'fantasy', messages);
+        const result = await chatWithAssistant('person', messages);
 
         expect(fetch).toHaveBeenCalledWith('/api/assist/chat', expect.objectContaining({
             method: 'POST',
             credentials: 'include',
         }));
         const body = JSON.parse(fetch.mock.calls[0][1].body);
-        expect(body).toEqual({ entity_type: 'person', genre: 'fantasy', messages });
+        expect(body).toEqual({ entity_type: 'person', messages });
         expect(result).toEqual({ reply: 'Here is an idea.' });
     });
 
     it('includes context_entities when provided', async () => {
         const messages = [{ role: 'user', content: 'Give me an idea' }];
         const contextEntities = [{ title: 'Gandalf', body: 'A wizard.' }];
-        await chatWithAssistant('person', 'fantasy', messages, contextEntities);
+        await chatWithAssistant('person', messages, contextEntities);
 
         const body = JSON.parse(fetch.mock.calls[0][1].body);
         expect(body.context_entities).toEqual(contextEntities);
@@ -37,7 +37,7 @@ describe('chatWithAssistant', () => {
 
     it('omits context_entities when empty', async () => {
         const messages = [{ role: 'user', content: 'Give me an idea' }];
-        await chatWithAssistant('person', 'fantasy', messages, []);
+        await chatWithAssistant('person', messages, []);
 
         const body = JSON.parse(fetch.mock.calls[0][1].body);
         expect(body).not.toHaveProperty('context_entities');

@@ -28,7 +28,7 @@ describe('AssistChatPanel', () => {
             expect(screen.getByText('Try a mysterious hermit.')).toBeInTheDocument();
         });
 
-        expect(chatWithAssistant).toHaveBeenCalledWith('person', 'fantasy', [
+        expect(chatWithAssistant).toHaveBeenCalledWith('person', [
             { role: 'user', content: 'Give me an idea' },
         ], []);
     });
@@ -72,7 +72,7 @@ describe('AssistChatPanel', () => {
 
         await waitFor(() => {
             expect(chatWithAssistant).toHaveBeenCalledWith(
-                'person', 'fantasy',
+                'person',
                 [{ role: 'user', content: 'Give me an idea' }],
                 [{ title: 'Gandalf', body: 'A wizard.' }],
             );
@@ -93,7 +93,7 @@ describe('AssistChatPanel', () => {
 
         await waitFor(() => {
             expect(chatWithAssistant).toHaveBeenCalledWith(
-                'person', 'fantasy',
+                'person',
                 [{ role: 'user', content: 'Give me an idea' }],
                 [],
             );
@@ -121,7 +121,7 @@ describe('AssistChatPanel', () => {
 
         await waitFor(() => {
             expect(chatWithAssistant).toHaveBeenCalledWith(
-                'person', 'fantasy',
+                'person',
                 [{ role: 'user', content: 'Give me an idea' }],
                 [{ title: 'Aragorn', body: 'A ranger.' }],
             );
