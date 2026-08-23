@@ -28,6 +28,12 @@ VENV_PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
 PYTHON = str(VENV_PYTHON) if VENV_PYTHON.exists() else sys.executable
 
 
+def find_uv():
+    """Return the `uv` executable if available, else None."""
+    import shutil
+    return shutil.which("uv")
+
+
 def run_cmd(cmd, cwd=None, env=None):
     """Run a command, stream output, and exit on failure."""
     print(f"  $ {' '.join(str(c) for c in cmd)}")
@@ -102,7 +108,7 @@ def cmd_build():
     print("Building React frontend…")
     npm = "npm.cmd" if sys.platform == "win32" else "npm"
     run_cmd([npm, "run", "build"], cwd=FRONTEND)
-    print("Build complete → frontend/build/")
+    print("Build complete -> frontend/build/")
 
 
 def cmd_db():
@@ -123,7 +129,7 @@ def cmd_db():
     # Show the resolved SQLite file path
     if db_url.startswith("sqlite:///"):
         db_path = ROOT / db_url.replace("sqlite:///", "")
-        print(f"Database up to date → {db_path.resolve()}")
+        print(f"Database up to date -> {db_path.resolve()}")
     else:
         print("Database up to date.")
 
@@ -169,7 +175,11 @@ def cmd_rebuild():
     print("=" * 50)
     print("Installing backend dependencies")
     print("=" * 50)
-    run_cmd([PYTHON, "-m", "pip", "install", "-r", "requirements.txt"], cwd=ROOT)
+    uv = find_uv()
+    if uv:
+        run_cmd([uv, "sync"], cwd=ROOT)
+    else:
+        run_cmd([PYTHON, "-m", "pip", "install", "-r", "requirements.txt"], cwd=ROOT)
 
     print()
     print("=" * 50)
