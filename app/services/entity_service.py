@@ -27,6 +27,7 @@ class EntityService:
         entity = Entity(
             title=data["title"],
             body=data["body"],
+            entity_type=data["entity_type"],
             project_id=data["project_id"],
         )
         db.session.add(entity)
@@ -44,6 +45,7 @@ class EntityService:
         entity = Entity.query.get_or_404(entity_id)
         entity.title = data.get("title", entity.title)
         entity.body = data.get("body", entity.body)
+        entity.entity_type = data.get("entity_type", entity.entity_type)
         db.session.commit()
         return entity.to_dict()
 

@@ -85,8 +85,8 @@ function App() {
         });
     };
 
-    const handleConfirm = (title, description, associations) => {
-        createEntity({ title, body: description, project_id: selectedProjectId })
+    const handleConfirm = (title, entityType, description, associations) => {
+        createEntity({ title, entity_type: entityType, body: description, project_id: selectedProjectId })
             .then(newEntity => {
                 const valid = (associations || []).filter(a => a.entityId);
                 return Promise.all(
@@ -106,8 +106,8 @@ function App() {
         });
     };
 
-    const handleSave = (id, title, body) => {
-        updateEntity(id, { title, body })
+    const handleSave = (id, title, entityType, body) => {
+        updateEntity(id, { title, entity_type: entityType, body })
             .then(updated => {
                 const withAssocs = { ...updated, associations: editingEntity?.associations || [] };
                 setEntities(prev => prev.map(e => e.id === id ? withAssocs : e));

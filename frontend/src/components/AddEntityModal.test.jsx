@@ -74,7 +74,7 @@ describe('AddEntityModal', () => {
         expect(screen.getByRole('button', { name: /create/i })).not.toBeDisabled();
     });
 
-    it('calls onConfirm with title, body, and valid associations, then closes', async () => {
+    it('calls onConfirm with title, entity type, body, and valid associations, then closes', async () => {
         const onConfirm = jest.fn();
         const onHide = jest.fn();
         render(<AddEntityModal show={true} onHide={onHide} onConfirm={onConfirm} entities={entities} />);
@@ -84,8 +84,23 @@ describe('AddEntityModal', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /create/i }));
 
-        expect(onConfirm).toHaveBeenCalledWith('Gandalf', 'A wise old wizard.', []);
+        expect(onConfirm).toHaveBeenCalledWith('Gandalf', 'person', 'A wise old wizard.', []);
         expect(onHide).toHaveBeenCalled();
+    });
+
+    it('defaults to Person and lets the type be changed before confirming', async () => {
+        const onConfirm = jest.fn();
+        render(<AddEntityModal show={true} onHide={jest.fn()} onConfirm={onConfirm} entities={[]} />);
+
+        const typeSelect = screen.getByLabelText('Type');
+        expect(typeSelect.value).toBe('person');
+
+        fireEvent.change(typeSelect, { target: { value: 'note' } });
+        await userEvent.type(screen.getByPlaceholderText(/enter a name/i), 'Campaign rules');
+        fireEvent.change(screen.getByLabelText('body'), { target: { value: 'House rules.' } });
+        fireEvent.click(screen.getByRole('button', { name: /create/i }));
+
+        expect(onConfirm).toHaveBeenCalledWith('Campaign rules', 'note', 'House rules.', []);
     });
 
     it('toggles the Get help panel', () => {

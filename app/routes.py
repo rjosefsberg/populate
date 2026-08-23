@@ -145,9 +145,14 @@ def register_routes(app):
         except (KeyError, TypeError, ValueError):
             return jsonify({"error": "project_id is required"}), 400
 
+        entity_type = clean_text(data.get("entity_type", ""), 50)
+        if (err := validate_entity_type(entity_type)):
+            return err
+
         entity = EntityService.create({
             "title": clean_text(data["title"], LIMITS["title"]),
             "body":  clean_html_body(data["body"], LIMITS["body"]),
+            "entity_type": entity_type,
             "project_id": project_id,
         })
         return jsonify(entity), 201
@@ -165,6 +170,11 @@ def register_routes(app):
             cleaned["title"] = clean_text(data["title"], LIMITS["title"])
         if "body" in data:
             cleaned["body"] = clean_html_body(data["body"], LIMITS["body"])
+        if "entity_type" in data:
+            entity_type = clean_text(data["entity_type"], 50)
+            if (err := validate_entity_type(entity_type)):
+                return err
+            cleaned["entity_type"] = entity_type
 
         entity = EntityService.update(entity_id, cleaned)
         return jsonify(entity), 200

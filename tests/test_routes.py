@@ -38,14 +38,46 @@ def test_get_entities_empty(auth_client, db):
 
 def test_create_entity_returns_201(auth_client, db, project):
     response = auth_client.post("/api/entities",
-        data=json.dumps({"title": "Aragorn", "body": "A ranger from the north.", "project_id": project.id}),
+        data=json.dumps({
+            "title": "Aragorn", "body": "A ranger from the north.",
+            "entity_type": "person", "project_id": project.id,
+        }),
         content_type="application/json")
     assert response.status_code == 201
     data = response.get_json()
     assert data["title"] == "Aragorn"
     assert data["body"] == "A ranger from the north."
+    assert data["entity_type"] == "person"
     assert data["project_id"] == project.id
     assert "id" in data
+
+
+def test_create_note_entity_returns_201(auth_client, db, project):
+    response = auth_client.post("/api/entities",
+        data=json.dumps({
+            "title": "Campaign rules", "body": "House rules for this campaign.",
+            "entity_type": "note", "project_id": project.id,
+        }),
+        content_type="application/json")
+    assert response.status_code == 201
+    assert response.get_json()["entity_type"] == "note"
+
+
+def test_create_entity_missing_entity_type_returns_400(auth_client, db, project):
+    response = auth_client.post("/api/entities",
+        data=json.dumps({"title": "Aragorn", "body": "A ranger.", "project_id": project.id}),
+        content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_create_entity_invalid_entity_type_returns_400(auth_client, db, project):
+    response = auth_client.post("/api/entities",
+        data=json.dumps({
+            "title": "Aragorn", "body": "A ranger.",
+            "entity_type": "dragon", "project_id": project.id,
+        }),
+        content_type="application/json")
+    assert response.status_code == 400
 
 
 def test_get_entity_by_id(auth_client, db, project):
@@ -70,6 +102,23 @@ def test_update_entity(auth_client, db, project):
     assert response.status_code == 200
     data = response.get_json()
     assert data["title"] == "Legolas Greenleaf"
+
+
+def test_update_entity_type(auth_client, db, project):
+    entity = make_entity(db, "Legolas", project=project)
+    response = auth_client.put(f"/api/entities/{entity.id}",
+        data=json.dumps({"entity_type": "note"}),
+        content_type="application/json")
+    assert response.status_code == 200
+    assert response.get_json()["entity_type"] == "note"
+
+
+def test_update_entity_invalid_type_returns_400(auth_client, db, project):
+    entity = make_entity(db, "Legolas", project=project)
+    response = auth_client.put(f"/api/entities/{entity.id}",
+        data=json.dumps({"entity_type": "dragon"}),
+        content_type="application/json")
+    assert response.status_code == 400
 
 
 def test_delete_entity_returns_200(auth_client, db, project):
@@ -254,7 +303,10 @@ def test_create_association_invalid_ids_returns_400(auth_client, db):
 
 def test_html_in_title_is_stripped(auth_client, db, project):
     response = auth_client.post("/api/entities",
-        data=json.dumps({"title": "<b>Bold Name</b>", "body": "A body.", "project_id": project.id}),
+        data=json.dumps({
+            "title": "<b>Bold Name</b>", "body": "A body.",
+            "entity_type": "person", "project_id": project.id,
+        }),
         content_type="application/json")
     assert response.status_code == 201
     assert response.get_json()["title"] == "Bold Name"
@@ -265,6 +317,7 @@ def test_body_allows_formatting_tags_but_strips_scripts(auth_client, db, project
         data=json.dumps({
             "title": "A title",
             "body": "<p><strong>Bold</strong></p><script>alert(1)</script>",
+            "entity_type": "person",
             "project_id": project.id,
         }),
         content_type="application/json")

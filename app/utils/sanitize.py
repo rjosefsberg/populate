@@ -2,7 +2,7 @@ import re
 import bleach
 from flask import jsonify
 
-VALID_ENTITY_TYPES = {"person", "place", "thing"}
+VALID_ENTITY_TYPES = {"person", "place", "thing", "note"}
 VALID_GENRES = {"fantasy", "sci-fi", "horror", "western", "historical", "noir", "post-apocalyptic"}
 VALID_CHAT_ROLES = {"user", "assistant"}
 

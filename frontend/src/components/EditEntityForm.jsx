@@ -4,8 +4,16 @@ import { createAssociation, deleteAssociation } from "../api/associations";
 import RichTextEditor from "./RichTextEditor";
 import AssistChatPanel from "./AssistChatPanel";
 
+const ENTITY_TYPES = [
+    { value: 'person', label: 'Person' },
+    { value: 'place', label: 'Place' },
+    { value: 'thing', label: 'Thing' },
+    { value: 'note', label: 'Note' },
+];
+
 function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChange }) {
     const [title, setTitle] = useState(entity.title);
+    const [entityType, setEntityType] = useState(entity.entity_type || 'person');
     const [body, setBody] = useState(entity.body);
     const [associations, setAssociations] = useState(entity.associations || []);
     const [newTargetId, setNewTargetId] = useState('');
@@ -55,18 +63,31 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
                             {helpOpen ? "Hide help" : "Get help"}
                         </Button>
                         <Button variant="outline-secondary" size="sm" onClick={onCancel}>Cancel</Button>
-                        <Button variant="primary" size="sm" onClick={() => onSave(entity.id, title, body)}>Save</Button>
+                        <Button variant="primary" size="sm" onClick={() => onSave(entity.id, title, entityType, body)}>Save</Button>
                     </div>
                 </div>
 
-                <div className="mb-4">
-                    <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Title</label>
-                    <input
-                        className="form-control form-control-lg border-0 border-bottom rounded-0 px-0 fw-semibold"
-                        style={{ fontSize: '1.4rem', boxShadow: 'none' }}
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                    />
+                <div className="row g-3 mb-4">
+                    <div className="col-8">
+                        <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Title</label>
+                        <input
+                            className="form-control form-control-lg border-0 border-bottom rounded-0 px-0 fw-semibold"
+                            style={{ fontSize: '1.4rem', boxShadow: 'none' }}
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                        />
+                    </div>
+                    <div className="col-4">
+                        <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Type</label>
+                        <select
+                            className="form-select"
+                            aria-label="Type"
+                            value={entityType}
+                            onChange={e => setEntityType(e.target.value)}
+                        >
+                            {ENTITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="mb-5">
@@ -103,6 +124,7 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
                         <div className="d-flex gap-2 align-items-center">
                             <select
                                 className="form-select form-select-sm"
+                                aria-label="Link to entity"
                                 style={{ maxWidth: 200 }}
                                 value={newTargetId}
                                 onChange={e => setNewTargetId(e.target.value)}
@@ -137,7 +159,7 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
 
             {helpOpen && (
                 <div className="border-start ps-4" style={{ width: 340, flexShrink: 0 }}>
-                    <AssistChatPanel entities={otherEntities} currentEntity={{ title, body }} />
+                    <AssistChatPanel entities={otherEntities} currentEntity={{ title, body }} entityType={entityType} />
                 </div>
             )}
         </div>

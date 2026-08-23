@@ -7,6 +7,7 @@ class Entity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=False)
+    entity_type = db.Column(db.String(20), nullable=False, server_default="person")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
 
@@ -23,6 +24,7 @@ class Entity(db.Model):
             "id": self.id,
             "title": self.title,
             "body": self.body,
+            "entity_type": self.entity_type,
             "created_at": self.created_at.isoformat(),
             "project_id": self.project_id,
             "associations": [a.to_dict() for a in self.associations]

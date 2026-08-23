@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import selectEvent from 'react-select-event';
 
 jest.mock('../api/assist', () => ({
     chatWithAssistant: jest.fn(),
@@ -65,7 +66,7 @@ describe('AssistChatPanel', () => {
         render(<AssistChatPanel entities={entities} />);
         expect(screen.getByText(/include entity in context/i)).toBeInTheDocument();
 
-        await userEvent.selectOptions(screen.getByRole('listbox'), ['Gandalf']);
+        await selectEvent.select(screen.getByLabelText(/include entity in context/i), ['Gandalf']);
         await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
         fireEvent.click(screen.getByRole('button', { name: /send/i }));
 
@@ -83,9 +84,9 @@ describe('AssistChatPanel', () => {
         const entities = [{ id: 1, title: 'Gandalf', body: 'A wizard.' }];
 
         render(<AssistChatPanel entities={entities} />);
-        const listbox = screen.getByRole('listbox');
-        await userEvent.selectOptions(listbox, ['Gandalf']);
-        await userEvent.deselectOptions(listbox, ['Gandalf']);
+        const input = screen.getByLabelText(/include entity in context/i);
+        await selectEvent.select(input, ['Gandalf']);
+        await selectEvent.clearAll(input);
 
         await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
         fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -99,8 +100,9 @@ describe('AssistChatPanel', () => {
         });
     });
 
-    it('offers the current in-progress entity as a context option', () => {
+    it('offers the current in-progress entity as a context option', async () => {
         render(<AssistChatPanel entities={[]} currentEntity={{ title: 'Aragorn', body: 'A ranger.' }} />);
+        await selectEvent.openMenu(screen.getByLabelText(/include entity in context/i));
         expect(screen.getByText('Aragorn (this entity)')).toBeInTheDocument();
     });
 
@@ -113,7 +115,7 @@ describe('AssistChatPanel', () => {
         chatWithAssistant.mockResolvedValue({ reply: 'Sure thing.' });
 
         render(<AssistChatPanel entities={[]} currentEntity={{ title: 'Aragorn', body: 'A ranger.' }} />);
-        await userEvent.selectOptions(screen.getByRole('listbox'), ['Aragorn (this entity)']);
+        await selectEvent.select(screen.getByLabelText(/include entity in context/i), ['Aragorn (this entity)']);
         await userEvent.type(screen.getByPlaceholderText(/ask the assistant/i), 'Give me an idea');
         fireEvent.click(screen.getByRole('button', { name: /send/i }));
 

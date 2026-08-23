@@ -42,7 +42,7 @@ def test_clean_prompt_text_truncates():
 
 def test_validate_entity_type_valid(app):
     with app.app_context():
-        for t in ("person", "place", "thing"):
+        for t in ("person", "place", "thing", "note"):
             assert validate_entity_type(t) is None
 
 

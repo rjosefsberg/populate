@@ -7,6 +7,13 @@ import AssistChatPanel from "./AssistChatPanel";
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 const colLabel = { ...labelStyle, fontSize: '0.65rem' };
 
+const ENTITY_TYPES = [
+    { value: 'person', label: 'Person' },
+    { value: 'place', label: 'Place' },
+    { value: 'thing', label: 'Thing' },
+    { value: 'note', label: 'Note' },
+];
+
 function AssociationRows({ associations, entities, onChange, disabled }) {
     const updateRow = (i, patch) => {
         onChange(associations.map((a, idx) => idx === i ? { ...a, ...patch } : a));
@@ -78,6 +85,7 @@ const isBodyEmpty = (html) => !html || !html.replace(/<[^>]+>/g, '').trim();
 
 function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
     const [title, setTitle] = useState('');
+    const [entityType, setEntityType] = useState('person');
     const [body, setBody] = useState('');
     const [associations, setAssociations] = useState([]);
     const [helpOpen, setHelpOpen] = useState(false);
@@ -86,12 +94,13 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
 
     const handleConfirm = () => {
         if (!canConfirm) return;
-        onConfirm(title.trim(), body, associations.filter(a => a.entityId));
+        onConfirm(title.trim(), entityType, body, associations.filter(a => a.entityId));
         handleClose();
     };
 
     const handleClose = () => {
         setTitle('');
+        setEntityType('person');
         setBody('');
         setAssociations([]);
         setHelpOpen(false);
@@ -106,15 +115,28 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
             <Modal.Body className="px-4 py-4">
                 <div className="d-flex gap-4">
                     <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                        <div className="mb-3">
-                            <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Title</label>
-                            <input
-                                className="form-control"
-                                value={title}
-                                onChange={e => setTitle(e.target.value)}
-                                placeholder="Enter a name…"
-                                autoFocus
-                            />
+                        <div className="row g-3 mb-3">
+                            <div className="col-8">
+                                <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Title</label>
+                                <input
+                                    className="form-control"
+                                    value={title}
+                                    onChange={e => setTitle(e.target.value)}
+                                    placeholder="Enter a name…"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="col-4">
+                                <label className="form-label text-uppercase fw-semibold" style={labelStyle}>Type</label>
+                                <select
+                                    className="form-select"
+                                    aria-label="Type"
+                                    value={entityType}
+                                    onChange={e => setEntityType(e.target.value)}
+                                >
+                                    {ENTITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                </select>
+                            </div>
                         </div>
 
                         <div className="mb-4">
@@ -136,7 +158,7 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
 
                     {helpOpen && (
                         <div className="border-start ps-4" style={{ width: 340, flexShrink: 0 }}>
-                            <AssistChatPanel entities={entities} currentEntity={{ title, body }} />
+                            <AssistChatPanel entities={entities} currentEntity={{ title, body }} entityType={entityType} />
                         </div>
                     )}
                 </div>

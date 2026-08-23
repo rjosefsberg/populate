@@ -10,12 +10,20 @@ function EntityDetail({ entity, onEdit, onDelete }) {
 
     return (
         <div className="p-4" style={{ maxWidth: 720 }}>
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-1">
                 <h2 className="mb-0 fw-semibold">{entity.title}</h2>
                 <div className="d-flex gap-2">
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => onEdit(entity)}>Edit</button>
                     <button className="btn btn-outline-danger btn-sm" onClick={() => onDelete(entity.id)}>Delete</button>
                 </div>
+            </div>
+
+            <div className="mb-4">
+                {entity.entity_type && (
+                    <span className="badge bg-secondary text-uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.06em' }}>
+                        {entity.entity_type}
+                    </span>
+                )}
             </div>
 
             <div

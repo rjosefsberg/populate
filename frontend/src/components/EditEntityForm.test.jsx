@@ -15,10 +15,11 @@ jest.mock('./RichTextEditor', () => ({ value, onChange }) => (
 ));
 
 // The Get-help panel is exercised in its own test suite; stub it here to inspect the props it's given.
-jest.mock('./AssistChatPanel', () => ({ entities, currentEntity }) => (
+jest.mock('./AssistChatPanel', () => ({ entities, currentEntity, entityType }) => (
     <div data-testid="assist-chat-panel">
         <div data-testid="assist-entities">{entities.map(e => e.title).join(',')}</div>
         <div data-testid="assist-current-entity">{currentEntity.title}|{currentEntity.body}</div>
+        <div data-testid="assist-entity-type">{entityType}</div>
     </div>
 ));
 
@@ -28,6 +29,7 @@ const baseEntity = {
     id: 1,
     title: 'Gandalf',
     body: 'A wise wizard of Middle-earth.',
+    entity_type: 'person',
     associations: [],
 };
 
@@ -47,7 +49,7 @@ describe('EditEntityForm', () => {
         expect(screen.getByDisplayValue('A wise wizard of Middle-earth.')).toBeInTheDocument();
     });
 
-    it('calls onSave with id, title, body when Save clicked', async () => {
+    it('calls onSave with id, title, entity type, and body when Save clicked', async () => {
         const onSave = jest.fn();
         render(<EditEntityForm entity={baseEntity} entities={entities} onSave={onSave} onCancel={jest.fn()} />);
 
@@ -56,7 +58,19 @@ describe('EditEntityForm', () => {
         await userEvent.type(titleInput, 'Gandalf the White');
 
         fireEvent.click(screen.getByRole('button', { name: /save/i }));
-        expect(onSave).toHaveBeenCalledWith(1, 'Gandalf the White', 'A wise wizard of Middle-earth.');
+        expect(onSave).toHaveBeenCalledWith(1, 'Gandalf the White', 'person', 'A wise wizard of Middle-earth.');
+    });
+
+    it('defaults the type select to the entity\'s current type and lets it change', () => {
+        const onSave = jest.fn();
+        render(<EditEntityForm entity={{ ...baseEntity, entity_type: 'note' }} entities={entities} onSave={onSave} onCancel={jest.fn()} />);
+
+        const typeSelect = screen.getByLabelText('Type');
+        expect(typeSelect.value).toBe('note');
+
+        fireEvent.change(typeSelect, { target: { value: 'place' } });
+        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+        expect(onSave).toHaveBeenCalledWith(1, 'Gandalf', 'place', 'A wise wizard of Middle-earth.');
     });
 
     it('calls onCancel when Cancel clicked', () => {
@@ -79,7 +93,7 @@ describe('EditEntityForm', () => {
 
         render(<EditEntityForm entity={baseEntity} entities={entities} onSave={jest.fn()} onCancel={jest.fn()} />);
 
-        const select = screen.getByRole('combobox');
+        const select = screen.getByLabelText('Link to entity');
         fireEvent.change(select, { target: { value: '2' } });
 
         fireEvent.change(screen.getByPlaceholderText(/describe the relationship/i), {
@@ -145,6 +159,7 @@ describe('EditEntityForm', () => {
         expect(screen.getByTestId('assist-entities')).toHaveTextContent('Frodo');
         expect(screen.getByTestId('assist-entities')).not.toHaveTextContent('Gandalf');
         expect(screen.getByTestId('assist-current-entity')).toHaveTextContent('Gandalf|A wise wizard of Middle-earth.');
+        expect(screen.getByTestId('assist-entity-type')).toHaveTextContent('person');
 
         fireEvent.click(screen.getByRole('button', { name: /hide help/i }));
         expect(screen.queryByTestId('assist-chat-panel')).not.toBeInTheDocument();

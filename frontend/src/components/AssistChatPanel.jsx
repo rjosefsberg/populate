@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Select from "react-select";
 import { chatWithAssistant } from "../api/assist";
 
 const GENRES = [
@@ -14,8 +15,7 @@ const GENRES = [
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 const CURRENT_ENTITY_ID = "__current__";
 
-function AssistChatPanel({ entities = [], currentEntity }) {
-    const [entityType, setEntityType] = useState("person");
+function AssistChatPanel({ entities = [], currentEntity, entityType = "person" }) {
     const [genre, setGenre] = useState("fantasy");
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
@@ -30,9 +30,11 @@ function AssistChatPanel({ entities = [], currentEntity }) {
             : []),
         ...entities.map(e => ({ id: e.id, label: e.title, title: e.title, body: e.body })),
     ];
+    const selectOptions = contextOptions.map(e => ({ value: String(e.id), label: e.label }));
+    const selectedOptions = selectOptions.filter(o => contextIds.includes(o.value));
 
-    const handleContextChange = (e) => {
-        setContextIds(Array.from(e.target.selectedOptions).map(o => o.value));
+    const handleContextChange = (selected) => {
+        setContextIds((selected || []).map(o => o.value));
     };
 
     const handleSend = () => {
@@ -65,19 +67,10 @@ function AssistChatPanel({ entities = [], currentEntity }) {
         <div className="d-flex flex-column h-100">
             <p className="text-uppercase fw-semibold mb-2" style={labelStyle}>Get help</p>
 
-            <div className="row g-2 mb-3">
-                <div className="col">
-                    <select className="form-select form-select-sm" value={genre} onChange={e => setGenre(e.target.value)}>
-                        {GENRES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                    </select>
-                </div>
-                <div className="col">
-                    <select className="form-select form-select-sm" value={entityType} onChange={e => setEntityType(e.target.value)}>
-                        <option value="person">Person</option>
-                        <option value="place">Place</option>
-                        <option value="thing">Thing</option>
-                    </select>
-                </div>
+            <div className="mb-3">
+                <select className="form-select form-select-sm" value={genre} onChange={e => setGenre(e.target.value)}>
+                    {GENRES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                </select>
             </div>
 
             {contextOptions.length > 0 && (
@@ -85,18 +78,22 @@ function AssistChatPanel({ entities = [], currentEntity }) {
                     <label className="form-label text-uppercase fw-semibold d-block" style={labelStyle}>
                         Include entity in context
                     </label>
-                    <select
-                        multiple
-                        className="form-select form-select-sm"
-                        size={Math.min(5, contextOptions.length)}
-                        value={contextIds}
+                    <Select
+                        isMulti
+                        aria-label="Include entity in context"
+                        options={selectOptions}
+                        value={selectedOptions}
                         onChange={handleContextChange}
-                    >
-                        {contextOptions.map(e => (
-                            <option key={e.id} value={e.id}>{e.label}</option>
-                        ))}
-                    </select>
-                    <p className="text-muted mb-0 mt-1" style={{ fontSize: '0.7rem' }}>Ctrl/Cmd-click to select multiple.</p>
+                        placeholder="Select entities…"
+                        closeMenuOnSelect={false}
+                        hideSelectedOptions={false}
+                        classNamePrefix="context-select"
+                        styles={{
+                            control: base => ({ ...base, minHeight: 31, fontSize: '0.875rem' }),
+                            valueContainer: base => ({ ...base, padding: '0 8px' }),
+                            indicatorsContainer: base => ({ ...base, height: 31 }),
+                        }}
+                    />
                 </div>
             )}
 
