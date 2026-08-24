@@ -73,6 +73,16 @@ describe('Sidebar — entity mode', () => {
         expect(headings).toEqual(['Person', 'Place']);
     });
 
+    it('collapses and re-expands a group when its header is clicked', () => {
+        render(<Sidebar {...entityModeProps} entities={entities} selectedId={null} onSelect={jest.fn()} />);
+        fireEvent.click(screen.getByText('Grouped'));
+        expect(screen.getByText('Aragorn')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Place'));
+        expect(screen.queryByText('Aragorn')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('Place'));
+        expect(screen.getByText('Aragorn')).toBeInTheDocument();
+    });
+
     it('sorts entities alphabetically when that sort option is selected', () => {
         render(<Sidebar {...entityModeProps} entities={entities} selectedId={null} onSelect={jest.fn()} />);
         fireEvent.change(screen.getByLabelText('Sort entities'), { target: { value: 'alphabetical' } });
