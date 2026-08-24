@@ -47,4 +47,5 @@ frontend/.env.production.local
 
 # OS
 .DS_Store
-Thumbs.db.manage_pids.json
+Thumbs.db
+.manage_pids.json
