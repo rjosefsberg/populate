@@ -33,7 +33,7 @@ describe('ProjectList', () => {
 
     it('opens the item menu with Open, Rename, and Delete, with Delete styled red', async () => {
         render(<ProjectList projects={projects} onOpen={jest.fn()} onCreate={jest.fn()} onRename={jest.fn()} onDelete={jest.fn()} />);
-        const toggles = screen.getAllByText('⋮');
+        const toggles = screen.getAllByRole('button', { name: /project options/i });
         await userEvent.click(toggles[0]);
         expect(screen.getByText('Open')).toBeInTheDocument();
         expect(screen.getByText('Rename')).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('ProjectList', () => {
         const onDelete = jest.fn();
         window.confirm = jest.fn().mockReturnValue(false);
         render(<ProjectList projects={projects} onOpen={jest.fn()} onCreate={jest.fn()} onRename={jest.fn()} onDelete={onDelete} />);
-        await userEvent.click(screen.getAllByText('⋮')[0]);
+        await userEvent.click(screen.getAllByRole('button', { name: /project options/i })[0]);
         await userEvent.click(screen.getByText('Delete'));
         expect(window.confirm).toHaveBeenCalled();
         expect(onDelete).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('ProjectList', () => {
         const onDelete = jest.fn();
         window.confirm = jest.fn().mockReturnValue(true);
         render(<ProjectList projects={projects} onOpen={jest.fn()} onCreate={jest.fn()} onRename={jest.fn()} onDelete={onDelete} />);
-        await userEvent.click(screen.getAllByText('⋮')[0]);
+        await userEvent.click(screen.getAllByRole('button', { name: /project options/i })[0]);
         await userEvent.click(screen.getByText('Delete'));
         expect(onDelete).toHaveBeenCalledWith(1);
     });
@@ -64,7 +64,7 @@ describe('ProjectList', () => {
     it('calls onRename with the edited name on Enter', async () => {
         const onRename = jest.fn();
         render(<ProjectList projects={projects} onOpen={jest.fn()} onCreate={jest.fn()} onRename={onRename} onDelete={jest.fn()} />);
-        await userEvent.click(screen.getAllByText('⋮')[0]);
+        await userEvent.click(screen.getAllByRole('button', { name: /project options/i })[0]);
         await userEvent.click(screen.getByText('Rename'));
         const input = screen.getByDisplayValue('Fellowship');
         await userEvent.clear(input);
@@ -75,7 +75,7 @@ describe('ProjectList', () => {
     it('clicking a project row while renaming does not trigger onOpen', async () => {
         const onOpen = jest.fn();
         render(<ProjectList projects={projects} onOpen={onOpen} onCreate={jest.fn()} onRename={jest.fn()} onDelete={jest.fn()} />);
-        await userEvent.click(screen.getAllByText('⋮')[0]);
+        await userEvent.click(screen.getAllByRole('button', { name: /project options/i })[0]);
         await userEvent.click(screen.getByText('Rename'));
         const input = screen.getByDisplayValue('Fellowship');
         fireEvent.click(input);

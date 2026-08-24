@@ -56,7 +56,7 @@ describe('AddEntityModal', () => {
             expect(screen.getByRole('option', { name: /select entity/i })).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText('×'));
+        fireEvent.click(screen.getByRole('button', { name: /remove association/i }));
         await waitFor(() => {
             expect(screen.queryByRole('option', { name: /select entity/i })).not.toBeInTheDocument();
         });

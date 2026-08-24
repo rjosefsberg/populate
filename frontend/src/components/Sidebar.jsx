@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaArrowLeft, FaChevronRight } from "react-icons/fa";
 import ProjectList from "./ProjectList";
 
 const ENTITY_TYPE_LABELS = {
@@ -75,10 +76,10 @@ function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProje
             ) : (
                 <>
                     <button
-                        className="btn btn-sm btn-link text-white text-decoration-none text-start px-0 mb-2"
+                        className="btn btn-sm btn-link text-white text-decoration-none text-start px-0 mb-2 d-flex align-items-center gap-2"
                         onClick={onBackToProjects}
                     >
-                        &larr; Projects
+                        <FaArrowLeft size={12} /> Projects
                     </button>
                     <p className="fw-semibold text-truncate mb-3">{projectName}</p>
 
@@ -127,16 +128,13 @@ function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProje
                                         onClick={() => toggleGroup(group.type)}
                                         aria-expanded={isOpen}
                                     >
-                                        <span
+                                        <FaChevronRight
+                                            size={10}
                                             style={{
-                                                display: "inline-block",
                                                 transition: "transform 0.15s ease",
                                                 transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                                                fontSize: "0.65rem",
                                             }}
-                                        >
-                                            &#9656;
-                                        </span>
+                                        />
                                         <span
                                             className="text-uppercase fw-semibold"
                                             style={{ fontSize: "0.7rem", letterSpacing: "0.08em", color: "#adb5bd" }}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "react-bootstrap/Button";
+import { FaTimes } from "react-icons/fa";
 import { createAssociation, deleteAssociation } from "../api/associations";
 import { uploadAttachment, deleteAttachment, attachmentDownloadUrl } from "../api/attachments";
 import RichTextEditor from "./RichTextEditor";
@@ -134,8 +135,9 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
                                         <button
                                             className="btn btn-link btn-sm text-danger p-0 ms-3"
                                             onClick={() => handleDeleteAssociation(a.id)}
+                                            aria-label="Remove association"
                                         >
-                                            ×
+                                            <FaTimes />
                                         </button>
                                     </li>
                                 );

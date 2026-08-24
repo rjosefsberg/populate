@@ -116,7 +116,7 @@ describe('EditEntityForm', () => {
         });
     });
 
-    it('calls deleteAssociation and removes row when × clicked', async () => {
+    it('calls deleteAssociation and removes row when remove button clicked', async () => {
         deleteAssociation.mockResolvedValue({});
 
         const entityWithAssoc = {
@@ -133,8 +133,8 @@ describe('EditEntityForm', () => {
         const frodoItem = listItems.find(item => item.textContent.includes('allies'));
         expect(frodoItem).toBeTruthy();
 
-        // Click the × button within that item
-        const deleteBtn = within(frodoItem).getByText('×');
+        // Click the remove button within that item
+        const deleteBtn = within(frodoItem).getByRole('button', { name: /remove association/i });
         fireEvent.click(deleteBtn);
 
         expect(deleteAssociation).toHaveBeenCalledWith(10);

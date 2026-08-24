@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
+import { FaTimes } from 'react-icons/fa';
 import RichTextEditor from "./RichTextEditor";
 import AssistChatPanel from "./AssistChatPanel";
 import AttachmentsList from "./AttachmentsList";
@@ -66,8 +67,9 @@ function AssociationRows({ associations, entities, onChange, disabled }) {
                                     onClick={() => removeRow(i)}
                                     disabled={disabled}
                                     type="button"
+                                    aria-label="Remove association"
                                 >
-                                    ×
+                                    <FaTimes />
                                 </button>
                             </div>
                         </div>

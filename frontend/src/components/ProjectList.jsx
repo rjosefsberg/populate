@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import Button from "react-bootstrap/Button";
+import { FaEllipsisV } from "react-icons/fa";
 
 function ProjectItemMenu({ onOpen, onRename, onDelete }) {
     return (
@@ -10,8 +11,9 @@ function ProjectItemMenu({ onOpen, onRename, onDelete }) {
                 bsPrefix="btn"
                 className="btn btn-sm btn-link text-white text-decoration-none px-2 py-0"
                 style={{ lineHeight: 1 }}
+                aria-label="Project options"
             >
-                &#8942;
+                <FaEllipsisV />
             </Dropdown.Toggle>
             <Dropdown.Menu>
                 <Dropdown.Item onClick={onOpen}>Open</Dropdown.Item>

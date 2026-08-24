@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { FaTimes } from "react-icons/fa";
 
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 
@@ -40,8 +41,9 @@ function AttachmentsList({ items, onAddFiles, onRemove, uploading }) {
                                 className="btn btn-link btn-sm text-danger p-0 flex-shrink-0"
                                 onClick={() => onRemove(item.key)}
                                 disabled={uploading}
+                                aria-label="Remove attachment"
                             >
-                                ×
+                                <FaTimes />
                             </button>
                         </li>
                     ))}
