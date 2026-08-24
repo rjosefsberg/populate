@@ -1,8 +1,10 @@
 import { useState } from "react";
 import Button from "react-bootstrap/Button";
 import { createAssociation, deleteAssociation } from "../api/associations";
+import { uploadAttachment, deleteAttachment, attachmentDownloadUrl } from "../api/attachments";
 import RichTextEditor from "./RichTextEditor";
 import AssistChatPanel from "./AssistChatPanel";
+import AttachmentsList from "./AttachmentsList";
 
 const ENTITY_TYPES = [
     { value: 'person', label: 'Person' },
@@ -11,7 +13,7 @@ const ENTITY_TYPES = [
     { value: 'note', label: 'Note' },
 ];
 
-function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChange }) {
+function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChange, onAttachmentsChange }) {
     const [title, setTitle] = useState(entity.title);
     const [entityType, setEntityType] = useState(entity.entity_type || 'person');
     const [body, setBody] = useState(entity.body);
@@ -20,6 +22,8 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
     const [newDescription, setNewDescription] = useState('');
     const [addingAssoc, setAddingAssoc] = useState(false);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [attachments, setAttachments] = useState(entity.attachments || []);
+    const [uploadingFiles, setUploadingFiles] = useState(false);
 
     const otherEntities = entities.filter(e => e.id !== entity.id);
 
@@ -44,6 +48,25 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
             const updated = associations.filter(a => a.id !== id);
             setAssociations(updated);
             onAssociationsChange?.({ ...entity, title, body, associations: updated });
+        });
+    };
+
+    const handleAddFiles = (files) => {
+        setUploadingFiles(true);
+        Promise.all(files.map(file => uploadAttachment(entity.id, file)))
+            .then(newAttachments => {
+                const updated = [...attachments, ...newAttachments];
+                setAttachments(updated);
+                onAttachmentsChange?.({ ...entity, title, body, attachments: updated });
+            })
+            .finally(() => setUploadingFiles(false));
+    };
+
+    const handleRemoveAttachment = (attachmentId) => {
+        deleteAttachment(attachmentId).then(() => {
+            const updated = attachments.filter(a => a.id !== attachmentId);
+            setAttachments(updated);
+            onAttachmentsChange?.({ ...entity, title, body, attachments: updated });
         });
     };
 
@@ -154,6 +177,20 @@ function EditEntityForm({ entity, entities, onSave, onCancel, onAssociationsChan
                             </Button>
                         </div>
                     )}
+                </div>
+
+                <div className="mt-5">
+                    <AttachmentsList
+                        items={attachments.map(a => ({
+                            key: a.id,
+                            filename: a.filename,
+                            size_bytes: a.size_bytes,
+                            downloadUrl: attachmentDownloadUrl(a.id),
+                        }))}
+                        onAddFiles={handleAddFiles}
+                        onRemove={handleRemoveAttachment}
+                        uploading={uploadingFiles}
+                    />
                 </div>
             </div>
 

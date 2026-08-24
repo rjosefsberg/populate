@@ -14,6 +14,7 @@ class Entity(db.Model):
     project = db.relationship("Project", back_populates="entities")
     associations_as_1 = db.relationship("Association", foreign_keys="Association.entity_id_1", back_populates="entity_1", cascade="all, delete-orphan")
     associations_as_2 = db.relationship("Association", foreign_keys="Association.entity_id_2", back_populates="entity_2", cascade="all, delete-orphan")
+    attachments = db.relationship("Attachment", back_populates="entity", cascade="all, delete-orphan")
 
     @property
     def associations(self):
@@ -27,5 +28,6 @@ class Entity(db.Model):
             "entity_type": self.entity_type,
             "created_at": self.created_at.isoformat(),
             "project_id": self.project_id,
-            "associations": [a.to_dict() for a in self.associations]
+            "associations": [a.to_dict() for a in self.associations],
+            "attachments": [a.to_dict() for a in self.attachments]
         }

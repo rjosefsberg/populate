@@ -100,7 +100,7 @@ describe('EditEntityForm', () => {
             target: { value: 'mentor' }
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /\+ add/i }));
+        fireEvent.click(screen.getByRole('button', { name: '+ Add' }));
 
         expect(createAssociation).toHaveBeenCalledWith({
             entity_id_1: 1,

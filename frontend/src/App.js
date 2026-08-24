@@ -5,6 +5,7 @@ import EditEntityForm from "./components/EditEntityForm";
 import LoginPage from "./components/LoginPage";
 import {getEntities, createEntity, updateEntity, deleteEntity} from "./api/entities";
 import {createAssociation} from "./api/associations";
+import {uploadAttachment} from "./api/attachments";
 import {getProjects, createProject, updateProject, deleteProject} from "./api/projects";
 import {getMe, logout, setUnauthorizedHandler} from "./api/client";
 import Button from "react-bootstrap/Button";
@@ -90,18 +91,19 @@ function App() {
         });
     };
 
-    const handleConfirm = (title, entityType, description, associations) => {
+    const handleConfirm = (title, entityType, description, associations, files) => {
         createEntity({title, entity_type: entityType, body: description, project_id: selectedProjectId})
             .then(newEntity => {
                 const valid = (associations || []).filter(a => a.entityId);
-                return Promise.all(
-                    valid.map(a => createAssociation({
+                return Promise.all([
+                    Promise.all(valid.map(a => createAssociation({
                         entity_id_1: newEntity.id,
                         entity_id_2: Number(a.entityId),
                         description: a.label || ""
-                    }))
-                ).then(savedAssocs => {
-                    const entityWithAssocs = {...newEntity, associations: savedAssocs};
+                    }))),
+                    Promise.all((files || []).map(file => uploadAttachment(newEntity.id, file))),
+                ]).then(([savedAssocs, savedAttachments]) => {
+                    const entityWithAssocs = {...newEntity, associations: savedAssocs, attachments: savedAttachments};
                     setEntities(prev => [...prev, entityWithAssocs]);
                     setSelectedEntity(entityWithAssocs);
                 });
@@ -118,9 +120,13 @@ function App() {
     const handleSave = (id, title, entityType, body) => {
         updateEntity(id, {title, entity_type: entityType, body})
             .then(updated => {
-                const withAssocs = {...updated, associations: editingEntity?.associations || []};
-                setEntities(prev => prev.map(e => e.id === id ? withAssocs : e));
-                setSelectedEntity(withAssocs);
+                const withExtras = {
+                    ...updated,
+                    associations: editingEntity?.associations || [],
+                    attachments: editingEntity?.attachments || [],
+                };
+                setEntities(prev => prev.map(e => e.id === id ? withExtras : e));
+                setSelectedEntity(withExtras);
                 setEditingEntity(null);
             });
     };
@@ -128,6 +134,16 @@ function App() {
     const handleAssociationsChange = (updatedEntity) => {
         setEntities(prev => prev.map(e => e.id === updatedEntity.id ? updatedEntity : e));
         setEditingEntity(updatedEntity);
+    };
+
+    const handleAttachmentsChange = (updatedEntity) => {
+        setEntities(prev => prev.map(e => e.id === updatedEntity.id ? updatedEntity : e));
+        setEditingEntity(updatedEntity);
+    };
+
+    const handleEntityChange = (updatedEntity) => {
+        setEntities(prev => prev.map(e => e.id === updatedEntity.id ? updatedEntity : e));
+        setSelectedEntity(updatedEntity);
     };
 
     if (authenticated === null) return null; // loading splash
@@ -186,6 +202,7 @@ function App() {
                             onSave={handleSave}
                             onCancel={() => setEditingEntity(null)}
                             onAssociationsChange={handleAssociationsChange}
+                            onAttachmentsChange={handleAttachmentsChange}
                         />
                     </div>
                 ) : (
@@ -193,6 +210,7 @@ function App() {
                         entity={selectedEntity}
                         onEdit={setEditingEntity}
                         onDelete={handleDelete}
+                        onEntityChange={handleEntityChange}
                     />
                 )}
             </div>

@@ -3,6 +3,7 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import RichTextEditor from "./RichTextEditor";
 import AssistChatPanel from "./AssistChatPanel";
+import AttachmentsList from "./AttachmentsList";
 
 const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
 const colLabel = { ...labelStyle, fontSize: '0.65rem' };
@@ -89,12 +90,21 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
     const [body, setBody] = useState('');
     const [associations, setAssociations] = useState([]);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [stagedFiles, setStagedFiles] = useState([]); // File objects — uploaded once the entity exists
 
     const canConfirm = title.trim() && !isBodyEmpty(body);
 
+    const handleAddFiles = (files) => {
+        setStagedFiles(prev => [...prev, ...files.map(file => ({ key: `${file.name}-${file.lastModified}-${Math.random()}`, file }))]);
+    };
+
+    const handleRemoveStagedFile = (key) => {
+        setStagedFiles(prev => prev.filter(f => f.key !== key));
+    };
+
     const handleConfirm = () => {
         if (!canConfirm) return;
-        onConfirm(title.trim(), entityType, body, associations.filter(a => a.entityId));
+        onConfirm(title.trim(), entityType, body, associations.filter(a => a.entityId), stagedFiles.map(f => f.file));
         handleClose();
     };
 
@@ -104,6 +114,7 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
         setBody('');
         setAssociations([]);
         setHelpOpen(false);
+        setStagedFiles([]);
         onHide();
     };
 
@@ -145,7 +156,7 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
                         </div>
 
                         {entities.length > 0 && (
-                            <div className="pt-3 border-top">
+                            <div className="pt-3 border-top mb-4">
                                 <AssociationRows
                                     associations={associations}
                                     entities={entities}
@@ -154,6 +165,15 @@ function AddEntityModal({ show, onHide, onConfirm, entities = [] }) {
                                 />
                             </div>
                         )}
+
+                        <div className="pt-3 border-top">
+                            <AttachmentsList
+                                items={stagedFiles.map(f => ({ key: f.key, filename: f.file.name, size_bytes: f.file.size }))}
+                                onAddFiles={handleAddFiles}
+                                onRemove={handleRemoveStagedFile}
+                                uploading={false}
+                            />
+                        </div>
                     </div>
 
                     {helpOpen && (

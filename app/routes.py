@@ -1,7 +1,8 @@
-from flask import jsonify, request
+from flask import jsonify, request, send_file
 from app.utils.sanitize import (
     require_json, validate_entity_type, validate_genre,
-    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, clean_context_entities, LIMITS,
+    clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, clean_context_entities,
+    LIMITS, MAX_ATTACHMENT_SIZE,
 )
 from app.auth import require_auth
 
@@ -146,6 +147,49 @@ def register_routes(app):
         from app.services.entity_service import EntityService
         EntityService.delete(entity_id)
         return jsonify({"message": "Entity deleted"}), 200
+
+    @app.route("/api/entities/<int:entity_id>/attachments", methods=["POST"])
+    @require_auth
+    def upload_attachment(entity_id):
+        from app.services.attachment_service import AttachmentService
+        file_storage = request.files.get("file")
+        if not file_storage or not file_storage.filename:
+            return jsonify({"error": "file is required"}), 400
+
+        # Flask's MAX_CONTENT_LENGTH already rejects an oversized request body (413) before
+        # this runs; this covers requests that don't declare Content-Length up front.
+        file_storage.stream.seek(0, 2)
+        size = file_storage.stream.tell()
+        file_storage.stream.seek(0)
+        if size > MAX_ATTACHMENT_SIZE:
+            return jsonify({"error": f"file exceeds the {MAX_ATTACHMENT_SIZE // (1024 * 1024)}MB limit"}), 400
+
+        attachment = AttachmentService.save(entity_id, file_storage)
+        return jsonify(attachment), 201
+
+    @app.route("/api/attachments/<int:attachment_id>/download", methods=["GET"])
+    @require_auth
+    def download_attachment(attachment_id):
+        import io
+        from app.services.attachment_service import AttachmentService
+        attachment = AttachmentService.get_by_id(attachment_id)
+        # Read into memory rather than streaming the path directly — send_file can leave the
+        # file handle open past the response on Windows, blocking a subsequent delete.
+        with open(attachment.stored_path, "rb") as f:
+            data = f.read()
+        return send_file(
+            io.BytesIO(data),
+            mimetype=attachment.content_type or "application/octet-stream",
+            as_attachment=True,
+            download_name=attachment.filename,
+        )
+
+    @app.route("/api/attachments/<int:attachment_id>", methods=["DELETE"])
+    @require_auth
+    def delete_attachment(attachment_id):
+        from app.services.attachment_service import AttachmentService
+        AttachmentService.delete(attachment_id)
+        return jsonify({"message": "Attachment deleted"}), 200
 
     @app.route("/api/entities/<int:entity_id>/associations", methods=["GET"])
     @require_auth

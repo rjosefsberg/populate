@@ -84,7 +84,7 @@ describe('AddEntityModal', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /create/i }));
 
-        expect(onConfirm).toHaveBeenCalledWith('Gandalf', 'person', 'A wise old wizard.', []);
+        expect(onConfirm).toHaveBeenCalledWith('Gandalf', 'person', 'A wise old wizard.', [], []);
         expect(onHide).toHaveBeenCalled();
     });
 
@@ -100,7 +100,7 @@ describe('AddEntityModal', () => {
         fireEvent.change(screen.getByLabelText('body'), { target: { value: 'House rules.' } });
         fireEvent.click(screen.getByRole('button', { name: /create/i }));
 
-        expect(onConfirm).toHaveBeenCalledWith('Campaign rules', 'note', 'House rules.', []);
+        expect(onConfirm).toHaveBeenCalledWith('Campaign rules', 'note', 'House rules.', [], []);
     });
 
     it('toggles the Get help panel', () => {

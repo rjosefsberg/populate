@@ -1,4 +1,10 @@
-function EntityDetail({ entity, onEdit, onDelete }) {
+import { useState } from "react";
+import AttachmentsList from "./AttachmentsList";
+import { uploadAttachment, deleteAttachment, attachmentDownloadUrl } from "../api/attachments";
+
+function EntityDetail({ entity, onEdit, onDelete, onEntityChange }) {
+    const [uploading, setUploading] = useState(false);
+
     if (!entity) return (
         <div className="p-4 text-muted">
             <h4>Select an entity to view details</h4>
@@ -6,7 +12,23 @@ function EntityDetail({ entity, onEdit, onDelete }) {
     );
 
     const associations = entity.associations || [];
+    const attachments = entity.attachments || [];
     const labelStyle = { fontSize: '0.7rem', letterSpacing: '0.08em', color: '#6c757d' };
+
+    const handleAddFiles = (files) => {
+        setUploading(true);
+        Promise.all(files.map(file => uploadAttachment(entity.id, file)))
+            .then(newAttachments => {
+                onEntityChange?.({ ...entity, attachments: [...attachments, ...newAttachments] });
+            })
+            .finally(() => setUploading(false));
+    };
+
+    const handleRemove = (attachmentId) => {
+        deleteAttachment(attachmentId).then(() => {
+            onEntityChange?.({ ...entity, attachments: attachments.filter(a => a.id !== attachmentId) });
+        });
+    };
 
     return (
         <div className="p-4" style={{ maxWidth: 720 }}>
@@ -33,7 +55,7 @@ function EntityDetail({ entity, onEdit, onDelete }) {
             />
 
             {associations.length > 0 && (
-                <div>
+                <div className="mb-5">
                     <p className="text-uppercase fw-semibold mb-3" style={labelStyle}>Associations</p>
                     <ul className="list-group list-group-flush">
                         {associations.map(a => {
@@ -48,6 +70,18 @@ function EntityDetail({ entity, onEdit, onDelete }) {
                     </ul>
                 </div>
             )}
+
+            <AttachmentsList
+                items={attachments.map(a => ({
+                    key: a.id,
+                    filename: a.filename,
+                    size_bytes: a.size_bytes,
+                    downloadUrl: attachmentDownloadUrl(a.id),
+                }))}
+                onAddFiles={handleAddFiles}
+                onRemove={handleRemove}
+                uploading={uploading}
+            />
         </div>
     );
 }

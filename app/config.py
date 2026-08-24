@@ -11,6 +11,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False  # set True behind HTTPS
+    MAX_CONTENT_LENGTH = 25 * 1024 * 1024  # 25MB — caps attachment uploads (and request bodies generally)
 
 class DevelopmentConfig(Config):
     DEBUG = True

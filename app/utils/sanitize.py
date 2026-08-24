@@ -18,7 +18,10 @@ LIMITS = {
     "context_entities": 10,
     "context_body": 2_000,
     "setting_value": 500,
+    "filename": 255,
 }
+
+MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024  # 25MB
 
 # Tags/attributes allowed in a WYSIWYG-edited entity body. Anything else is stripped.
 ALLOWED_BODY_TAGS = [

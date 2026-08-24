@@ -6,10 +6,12 @@ export function setUnauthorizedHandler(fn) {
 }
 
 export function apiFetch(url, options = {}) {
+    // FormData sets its own multipart Content-Type (with boundary) — let the browser handle it.
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
     return fetch(url, {
         ...options,
         credentials: "include",
-        headers: { "Content-Type": "application/json", ...options.headers },
+        headers: isFormData ? { ...options.headers } : { "Content-Type": "application/json", ...options.headers },
     }).then(res => {
         if (res.status === 401 && _onUnauthorized) {
             _onUnauthorized();
