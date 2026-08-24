@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 from app import db
 from app.models import Entity
 
@@ -44,5 +45,6 @@ class EntityService:
         entity.title = data.get("title", entity.title)
         entity.body = data.get("body", entity.body)
         entity.entity_type = data.get("entity_type", entity.entity_type)
+        entity.updated_at = datetime.utcnow()
         db.session.commit()
         return entity.to_dict()

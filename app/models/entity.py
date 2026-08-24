@@ -9,6 +9,7 @@ class Entity(db.Model):
     body = db.Column(db.Text, nullable=False)
     entity_type = db.Column(db.String(20), nullable=False, server_default="person")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
 
     project = db.relationship("Project", back_populates="entities")
@@ -27,6 +28,7 @@ class Entity(db.Model):
             "body": self.body,
             "entity_type": self.entity_type,
             "created_at": self.created_at.isoformat(),
+            "updated_at": (self.updated_at or self.created_at).isoformat(),
             "project_id": self.project_id,
             "associations": [a.to_dict() for a in self.associations],
             "attachments": [a.to_dict() for a in self.attachments]

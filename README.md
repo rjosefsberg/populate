@@ -1,42 +1,17 @@
 # Populate
 
 ## About
-A fantasy world-building tool. Create characters, places, and items — the app uses the Anthropic Claude API to generate rich descriptions for each one, and lets you link them together with typed associations.
-
-## Why
-Hello! If you're reading this you might be looking for some extremely niche creativity tools for tabletop roleplaying game, or you might be considering me
-for a job. Either way, glad you're here. I'm going to talk assuming you understand what Dungeons and Dragons is.
-
-I've had this tool kicking around in my head since the generative AI boom. I would often find myself in need of a random 
-story bit for a game and really did not need to put an immense amount of thought into the fine details. However, once something is "on screen" its forever ,
-and players rarely forget. So, I wanted something light and fast that could:
-
-1) Create the type of thing I need (person, place, thing).
-2) Let me clean it up and refine it. 
-3) Let me associate it with other things in the future, so I can keep track. 
-
-
-It started as a Spring Boot project using the templating and front end tech I was used to. I immediately lost interest in it because I was using the
-same stack for work. 
-
-Recently, I came upon a fair amount of free time, so I decided to start fresh with a modern stack and a more modern UI. Most importantly, I wanted
-to see how powerful Claude Code was. Most jobs on the market right now expect this type of tool to be fully integrated into your workflow. So, I decided to
-build it end to end with Claude Code to see how easy it would be and how reliable it was. I will be completely honest, 
-I have not read every single line of every single test in this project. If you want to open an accusatory merge request, go for it. 
-I have, however, spent time on the important bits, like sanitizing user input and making sure the app is secure. 
-Learning more about the deployment technologies was also interesting. I did not go as far as actually deploying the app,
-but I did set up a CI pipeline to build and push a Docker image to GitHub Container Registry. 
-
-My thoughts. These tools are exceptionally powerful, but also extremely naive. It needs reminders not to overengineer. 
-I can say pretty confidently that these tools will be part of our job from here on. I just hope we, as an industry, can
-mature fast enough to understand their limitations. 
-
+A world-building tool. Group your work into projects. Write entities (people, places, things, notes) in a rich-text editor, 
+link them together with typed associations, attach files, and use an optional Claude-powered chat panel for help when you want it.
 
 ## What it does
 
-- **Generate entities** — give a name, pick a genre (Fantasy, Sci-Fi, Horror, Western, Historical, Noir, Post-Apocalyptic) and type (person, place, thing), and Claude writes a three-sentence description
-- **Associations** — link any two entities with a description; associations can optionally be included in the generation prompt so they're woven into the generated text
-- **Edit** — titles, descriptions, and associations are all editable after creation
+- **Projects** — group entities into separate projects; list, create, rename, and delete them from the sidebar
+- **Entities** — create people, places, things, and notes, and write their descriptions in a rich-text editor (font, size, color, alignment, tables)
+- **Get-help chat** — an optional assistant panel; pick other entities as context and ask Claude for suggestions while you write
+- **Associations** — link any two entities with a description of the relationship
+- **Attachments** — attach files to an entity, download them, and remove them later
+- **Settings** — set or update your Anthropic API key from a panel in the app; the key is masked after entry
 - **Usage tracker** — a sidebar button shows session token usage and confirms your API key is active
 
 ---
@@ -45,7 +20,7 @@ mature fast enough to understand their limitations.
 
 - Python 3.13+
 - Node 20+
-- An [Anthropic API key](https://console.anthropic.com/)
+- (Optional, for Get-help) [Anthropic API key](https://console.anthropic.com/)
 
 ---
 
@@ -220,9 +195,13 @@ This removes the instance, security group, and Elastic IP. The SQLite file on th
 browser
   └── Flask (port 5000)
         ├── /api/*         → Python route handlers
-        │     ├── entity_service.py   (CRUD + Anthropic generation)
+        │     ├── project_service.py     (project CRUD)
+        │     ├── entity_service.py      (entity CRUD)
         │     ├── association_service.py
-        │     └── usage_service.py    (in-memory token tracking)
+        │     ├── attachment_service.py  (file upload/download)
+        │     ├── assist_service.py      (Get-help chat, Anthropic API)
+        │     ├── settings_service.py    (API key storage)
+        │     └── usage_service.py       (in-memory token tracking)
         └── /*             → React build (static files)
 
 Storage: SQLite (default) or PostgreSQL (set DATABASE_URL)
@@ -234,8 +213,10 @@ Storage: SQLite (default) or PostgreSQL (set DATABASE_URL)
 |---|---|
 | `app/routes.py` | HTTP handlers |
 | `app/auth.py` | Session-based auth, `@require_auth` decorator |
-| `app/services/entity_service.py` | Generation prompt builder + Anthropic API call |
+| `app/services/assist_service.py` | Get-help chat prompt builder + Anthropic API call |
 | `app/utils/sanitize.py` | Input validation and sanitization |
 | `frontend/src/api/client.js` | Central fetch wrapper (credentials, 401 handling) |
-| `frontend/src/components/AddEntityModal.js` | Create flow with genre, type, associations |
-| `frontend/src/components/EditEntityForm.jsx` | Edit flow with inline association management |
+| `frontend/src/components/RichTextEditor.jsx` | Entity description editor |
+| `frontend/src/components/AssistChatPanel.jsx` | Get-help chat with entity context picker |
+| `frontend/src/components/EditEntityForm.jsx` | Edit flow with associations and attachments |
+| `frontend/src/components/SettingsModal.jsx` | API key entry and masking |

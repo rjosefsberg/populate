@@ -3,9 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import Sidebar from './Sidebar';
 
 const entities = [
-    { id: 1, title: 'Gandalf' },
-    { id: 2, title: 'Frodo' },
-    { id: 3, title: 'Aragorn' },
+    { id: 1, title: 'Gandalf', entity_type: 'person', created_at: '2026-01-01', updated_at: '2026-01-01' },
+    { id: 2, title: 'Frodo', entity_type: 'person', created_at: '2026-01-02', updated_at: '2026-01-02' },
+    { id: 3, title: 'Aragorn', entity_type: 'place', created_at: '2026-01-03', updated_at: '2026-01-03' },
 ];
 
 const entityModeProps = {
@@ -64,6 +64,20 @@ describe('Sidebar — entity mode', () => {
         render(<Sidebar {...entityModeProps} entities={[]} selectedId={null} onSelect={jest.fn()} />);
         expect(screen.getByText('Middle-earth')).toBeInTheDocument();
         expect(screen.getByText(/projects/i)).toBeInTheDocument();
+    });
+
+    it('groups entities by type alphabetically when switched to grouped view', () => {
+        render(<Sidebar {...entityModeProps} entities={entities} selectedId={null} onSelect={jest.fn()} />);
+        fireEvent.click(screen.getByText('Grouped'));
+        const headings = screen.getAllByText(/^(Person|Place)$/).map(el => el.textContent);
+        expect(headings).toEqual(['Person', 'Place']);
+    });
+
+    it('sorts entities alphabetically when that sort option is selected', () => {
+        render(<Sidebar {...entityModeProps} entities={entities} selectedId={null} onSelect={jest.fn()} />);
+        fireEvent.change(screen.getByLabelText('Sort entities'), { target: { value: 'alphabetical' } });
+        const items = screen.getAllByRole('listitem').map(li => li.textContent);
+        expect(items).toEqual(['Aragorn', 'Frodo', 'Gandalf']);
     });
 });
 
