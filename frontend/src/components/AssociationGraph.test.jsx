@@ -11,7 +11,16 @@ const gandalf = {
         { id: 10, entity_id_1: 1, entity_id_2: 2, entity_1_title: 'Gandalf', entity_2_title: 'Frodo', description: 'mentor and student' },
     ],
 };
-const frodo = { id: 2, title: 'Frodo', entity_type: 'person', associations: [] };
+const frodo = {
+    id: 2,
+    title: 'Frodo',
+    entity_type: 'person',
+    associations: [
+        { id: 10, entity_id_1: 1, entity_id_2: 2, entity_1_title: 'Gandalf', entity_2_title: 'Frodo', description: 'mentor and student' },
+        { id: 11, entity_id_1: 2, entity_id_2: 3, entity_1_title: 'Frodo', entity_2_title: 'Sam', description: 'friends' },
+    ],
+};
+const sam = { id: 3, title: 'Sam', entity_type: 'person', associations: [] };
 
 describe('AssociationGraph', () => {
     it('renders the center entity and one node per associated neighbor', () => {
@@ -25,7 +34,7 @@ describe('AssociationGraph', () => {
     });
 
     it('shows an empty-state message when the entity has no associations', () => {
-        render(<AssociationGraph entity={frodo} entities={[gandalf, frodo]} onFocusEntity={jest.fn()} />);
+        render(<AssociationGraph entity={sam} entities={[gandalf, frodo, sam]} onFocusEntity={jest.fn()} />);
         expect(screen.getByText(/no associations yet/i)).toBeInTheDocument();
     });
 
@@ -74,5 +83,15 @@ describe('AssociationGraph', () => {
         fireEvent.doubleClick(screen.getByText('Gandalf'));
 
         expect(onFocusEntity).not.toHaveBeenCalled();
+    });
+
+    it('only shows direct associations until "show associations of associations" is checked', async () => {
+        render(<AssociationGraph entity={gandalf} entities={[gandalf, frodo, sam]} onFocusEntity={jest.fn()} />);
+
+        expect(screen.queryByText('Sam')).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('checkbox', { name: /show associations of associations/i }));
+
+        expect(screen.getByText('Sam')).toBeInTheDocument();
     });
 });

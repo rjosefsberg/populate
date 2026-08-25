@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
+import { useMemo, useState } from "react";
+import { ReactFlow, Background, Controls, MarkerType, Panel } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import FloatingEdge from "./FloatingEdge";
 import EntityNode from "./EntityNode";
@@ -11,79 +11,114 @@ const nodeTypes = { entity: EntityNode };
 const CENTER_WIDTH = 180;
 const NEIGHBOR_WIDTH = 150;
 const NODE_HEIGHT = 40;
-const RADIUS = 280;
+const RING_RADIUS = [0, 280, 480]; // index by ring number (0 = center)
+const RING2_ANGLE_STEP = 0.32; // radians between siblings sharing a ring-1 parent
 
-function otherEntityId(assoc, centerId) {
-    return assoc.entity_id_1 === centerId ? assoc.entity_id_2 : assoc.entity_id_1;
+function otherEntityId(assoc, fromId) {
+    return assoc.entity_id_1 === fromId ? assoc.entity_id_2 : assoc.entity_id_1;
 }
 
-function otherEntityTitle(assoc, centerId) {
-    return assoc.entity_id_1 === centerId ? assoc.entity_2_title : assoc.entity_1_title;
+function otherEntityTitle(assoc, fromId) {
+    return assoc.entity_id_1 === fromId ? assoc.entity_2_title : assoc.entity_1_title;
 }
 
-function layout(entity, entities, onInspect) {
-    const associations = entity.associations || [];
-    const entityById = new Map(entities.map(e => [e.id, e]));
-
-    // The center node's position is its own on-circle point too: offsetting
-    // it by half its size (like every neighbor below) keeps it exactly at
-    // the hub, so the neighbor angles come out as the standard 360/count
-    // split instead of skewed by half a node's width/height.
-    const nodes = [
-        {
-            id: String(entity.id),
-            type: "entity",
-            data: {
-                label: entity.title,
-                entityType: entity.entity_type,
-                isCenter: true,
-                onInspect: () => onInspect(entity),
-            },
-            position: { x: -CENTER_WIDTH / 2, y: -NODE_HEIGHT / 2 },
-            style: { width: CENTER_WIDTH, height: NODE_HEIGHT },
+function makeNode(id, title, entityType, angle, ring, isCenter, onInspect) {
+    const width = isCenter ? CENTER_WIDTH : NEIGHBOR_WIDTH;
+    const radius = RING_RADIUS[ring];
+    return {
+        id: String(id),
+        type: "entity",
+        data: { label: title, entityType, isCenter, onInspect },
+        // Every node (center included) is offset by half its own size, so
+        // the point placed on the ring is the node's true center — otherwise
+        // the ring geometry skews by half a node's width/height.
+        position: {
+            x: radius * Math.cos(angle) - width / 2,
+            y: radius * Math.sin(angle) - NODE_HEIGHT / 2,
         },
-    ];
+        style: { width, height: NODE_HEIGHT },
+    };
+}
 
-    const count = associations.length;
-    associations.forEach((assoc, i) => {
-        const neighborId = otherEntityId(assoc, entity.id);
-        const neighborTitle = otherEntityTitle(assoc, entity.id);
-        const neighbor = entityById.get(neighborId);
-        const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-
-        nodes.push({
-            id: String(neighborId),
-            type: "entity",
-            data: {
-                label: neighborTitle,
-                entityType: neighbor?.entity_type,
-                isCenter: false,
-                onInspect: () => onInspect(neighbor || { id: neighborId, title: neighborTitle }),
-            },
-            position: {
-                x: RADIUS * Math.cos(angle) - NEIGHBOR_WIDTH / 2,
-                y: RADIUS * Math.sin(angle) - NODE_HEIGHT / 2,
-            },
-            style: { width: NEIGHBOR_WIDTH, height: NODE_HEIGHT },
-        });
-    });
-
-    const edges = associations.map(assoc => ({
+function makeEdge(assoc, sourceId, targetId) {
+    return {
         id: String(assoc.id),
-        source: String(entity.id),
-        target: String(otherEntityId(assoc, entity.id)),
+        source: String(sourceId),
+        target: String(targetId),
         label: assoc.description,
         type: "floating",
         markerEnd: { type: MarkerType.ArrowClosed },
-    }));
+    };
+}
+
+// depth 1: center + its direct associations.
+// depth 2: also each ring-1 neighbor's own associations, one ring further
+// out (skipping anything already placed, so shared/cyclical associations
+// don't duplicate a node — the extra edge to an already-placed node still
+// renders).
+function layout(entity, entities, onInspect, depth) {
+    const entityById = new Map(entities.map(e => [e.id, e]));
+    const placed = new Set([entity.id]);
+    const nodes = [
+        makeNode(entity.id, entity.title, entity.entity_type, 0, 0, true, () => onInspect(entity)),
+    ];
+    const edges = [];
+
+    const ring1 = entity.associations || [];
+    const ring1Angles = new Map();
+
+    ring1.forEach((assoc, i) => {
+        const neighborId = otherEntityId(assoc, entity.id);
+        const neighborTitle = otherEntityTitle(assoc, entity.id);
+        const neighbor = entityById.get(neighborId);
+        const angle = (2 * Math.PI * i) / ring1.length - Math.PI / 2;
+
+        ring1Angles.set(neighborId, angle);
+        placed.add(neighborId);
+        nodes.push(makeNode(
+            neighborId, neighborTitle, neighbor?.entity_type, angle, 1, false,
+            () => onInspect(neighbor || { id: neighborId, title: neighborTitle })
+        ));
+        edges.push(makeEdge(assoc, entity.id, neighborId));
+    });
+
+    if (depth >= 2) {
+        ring1.forEach(assoc => {
+            const neighborId = otherEntityId(assoc, entity.id);
+            const neighbor = entityById.get(neighborId);
+            const parentAngle = ring1Angles.get(neighborId);
+            const grandAssocs = (neighbor?.associations || []).filter(
+                a => otherEntityId(a, neighborId) !== entity.id
+            );
+
+            grandAssocs.forEach((assoc2, j) => {
+                const grandId = otherEntityId(assoc2, neighborId);
+                const grandTitle = otherEntityTitle(assoc2, neighborId);
+                const grand = entityById.get(grandId);
+
+                if (!placed.has(grandId)) {
+                    const angleOffset = (j - (grandAssocs.length - 1) / 2) * RING2_ANGLE_STEP;
+                    nodes.push(makeNode(
+                        grandId, grandTitle, grand?.entity_type, parentAngle + angleOffset, 2, false,
+                        () => onInspect(grand || { id: grandId, title: grandTitle })
+                    ));
+                    placed.add(grandId);
+                }
+                edges.push(makeEdge(assoc2, neighborId, grandId));
+            });
+        });
+    }
 
     return { nodes, edges };
 }
 
 export default function AssociationGraph({ entity, entities, onFocusEntity, onInspectEntity }) {
+    const [showSecondDegree, setShowSecondDegree] = useState(false);
+    const depth = showSecondDegree ? 2 : 1;
+
     const { nodes, edges } = useMemo(
-        () => layout(entity, entities, onInspectEntity || (() => {})),
-        [entity, entities, onInspectEntity]
+        () => layout(entity, entities, onInspectEntity || (() => {}), depth),
+        [entity, entities, onInspectEntity, depth]
     );
 
     if ((entity.associations || []).length === 0) {
@@ -93,7 +128,7 @@ export default function AssociationGraph({ entity, entities, onFocusEntity, onIn
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <ReactFlow
-                key={entity.id}
+                key={`${entity.id}-${depth}`}
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
@@ -108,6 +143,16 @@ export default function AssociationGraph({ entity, entities, onFocusEntity, onIn
                 <Background />
                 <Controls />
                 <GraphLegend />
+                <Panel position="top-right">
+                    <label className="bg-white border rounded p-2 d-flex align-items-center gap-2" style={{ fontSize: 12 }}>
+                        <input
+                            type="checkbox"
+                            checked={showSecondDegree}
+                            onChange={e => setShowSecondDegree(e.target.checked)}
+                        />
+                        Show associations of associations
+                    </label>
+                </Panel>
             </ReactFlow>
         </div>
     );

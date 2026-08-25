@@ -221,7 +221,7 @@ function App() {
                         className="mt-2"
                         onClick={() => setShowGraph(prev => !prev)}
                     >
-                        {showGraph ? "View details" : "Graph view"}
+                        {showGraph ? "Details view" : "Graph view"}
                     </Button>
                 )}
             </Sidebar>
