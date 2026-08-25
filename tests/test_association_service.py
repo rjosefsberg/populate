@@ -5,12 +5,14 @@ from app.services.association_service import AssociationService
 from app import db as _db
 
 
-def make_entity(db, title, body="Some body text"):
-    from app.models.project import Project
-    project = Project(name="Untitled Project")
-    db.session.add(project)
-    db.session.commit()
-    entity = Entity(title=title, body=body, project_id=project.id)
+def make_entity(db, title, body="Some body text", project_id=None):
+    if project_id is None:
+        from app.models.project import Project
+        project = Project(name="Untitled Project")
+        db.session.add(project)
+        db.session.commit()
+        project_id = project.id
+    entity = Entity(title=title, body=body, project_id=project_id)
     db.session.add(entity)
     db.session.commit()
     return entity
@@ -79,3 +81,17 @@ def test_delete_association_no_longer_appears_for_either_entity(db):
 
     assert AssociationService.get_for_entity(e1.id) == []
     assert AssociationService.get_for_entity(e2.id) == []
+
+
+def test_get_for_project_excludes_associations_from_other_projects(db):
+    e1 = make_entity(db, "Gandalf")
+    e2 = make_entity(db, "Frodo", project_id=e1.project_id)
+    other = make_entity(db, "Sauron")  # different project
+
+    AssociationService.create({"entity_id_1": e1.id, "entity_id_2": e2.id, "description": "companions"})
+    AssociationService.create({"entity_id_1": e1.id, "entity_id_2": other.id, "description": "nemesis"})
+
+    results = AssociationService.get_for_project(e1.project_id)
+
+    assert len(results) == 1
+    assert results[0]["description"] == "companions"

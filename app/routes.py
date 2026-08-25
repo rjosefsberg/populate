@@ -197,6 +197,12 @@ def register_routes(app):
         from app.services.association_service import AssociationService
         return jsonify(AssociationService.get_for_entity(entity_id))
 
+    @app.route("/api/projects/<int:project_id>/associations", methods=["GET"])
+    @require_auth
+    def get_project_associations(project_id):
+        from app.services.association_service import AssociationService
+        return jsonify(AssociationService.get_for_project(project_id))
+
     @app.route("/api/associations", methods=["POST"])
     @require_auth
     def create_association():
