@@ -42,6 +42,7 @@ frontend/.env.production.local
 # Desktop app (Tauri/Rust build output and generated sidecar binary)
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/
+desktop/src-tauri/gen/
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl
