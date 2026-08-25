@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { FaArrowLeft, FaChevronRight } from "react-icons/fa";
 import ProjectList from "./ProjectList";
-
-const ENTITY_TYPE_LABELS = {
-    person: "Person",
-    place: "Place",
-    thing: "Thing",
-    note: "Note",
-};
+import { ENTITY_TYPE_LABELS } from "./entityTypeColors";
 
 const SORT_OPTIONS = [
     { value: "updated", label: "Last Edited (Default)" },

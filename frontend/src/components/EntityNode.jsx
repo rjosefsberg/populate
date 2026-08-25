@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { FaEye } from "react-icons/fa";
 import { colorForType } from "./entityTypeColors";
@@ -12,7 +13,9 @@ const handleStyle = { opacity: 0, width: "100%", height: "100%", inset: 0, trans
 
 // Custom node for the association graph. See:
 // https://reactflow.dev/learn/customization/custom-nodes
-export default function EntityNode({ data }) {
+// Memoized: React Flow re-renders every node on pan/zoom/drag, but `data`
+// (built once per layout() recompute) stays referentially stable in between.
+function EntityNode({ data }) {
     const { label, entityType, isCenter, onInspect } = data;
 
     return (
@@ -46,3 +49,5 @@ export default function EntityNode({ data }) {
         </div>
     );
 }
+
+export default memo(EntityNode);

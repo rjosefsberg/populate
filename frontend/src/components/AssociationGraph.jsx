@@ -83,7 +83,11 @@ function layout(entity, entities, onInspect, depth) {
     });
 
     if (depth >= 2) {
-        ring1.forEach(assoc => {
+        // First work out *which* second-degree associations to draw and at
+        // what angle (one flat list across every ring-1 neighbor), then a
+        // single pass places nodes/edges for them — keeps "what goes where"
+        // separate from "how to render it", instead of nesting both loops.
+        const ring2Items = ring1.flatMap(assoc => {
             const neighborId = otherEntityId(assoc, entity.id);
             const neighbor = entityById.get(neighborId);
             const parentAngle = ring1Angles.get(neighborId);
@@ -91,21 +95,25 @@ function layout(entity, entities, onInspect, depth) {
                 a => otherEntityId(a, neighborId) !== entity.id
             );
 
-            grandAssocs.forEach((assoc2, j) => {
-                const grandId = otherEntityId(assoc2, neighborId);
-                const grandTitle = otherEntityTitle(assoc2, neighborId);
-                const grand = entityById.get(grandId);
+            return grandAssocs.map((assoc2, j) => ({
+                assoc: assoc2,
+                neighborId,
+                grandId: otherEntityId(assoc2, neighborId),
+                grandTitle: otherEntityTitle(assoc2, neighborId),
+                angle: parentAngle + (j - (grandAssocs.length - 1) / 2) * RING2_ANGLE_STEP,
+            }));
+        });
 
-                if (!placed.has(grandId)) {
-                    const angleOffset = (j - (grandAssocs.length - 1) / 2) * RING2_ANGLE_STEP;
-                    nodes.push(makeNode(
-                        grandId, grandTitle, grand?.entity_type, parentAngle + angleOffset, 2, false,
-                        () => onInspect(grand || { id: grandId, title: grandTitle })
-                    ));
-                    placed.add(grandId);
-                }
-                edges.push(makeEdge(assoc2, neighborId, grandId));
-            });
+        ring2Items.forEach(({ assoc, neighborId, grandId, grandTitle, angle }) => {
+            const grand = entityById.get(grandId);
+            if (!placed.has(grandId)) {
+                nodes.push(makeNode(
+                    grandId, grandTitle, grand?.entity_type, angle, 2, false,
+                    () => onInspect(grand || { id: grandId, title: grandTitle })
+                ));
+                placed.add(grandId);
+            }
+            edges.push(makeEdge(assoc, neighborId, grandId));
         });
     }
 

@@ -45,13 +45,20 @@ function App() {
         }
     }, [authenticated]);
 
+    // Clears whichever entity is selected/edited/inspected, without
+    // touching the project list itself. Shared by every handler that leaves
+    // or resets the current project's entity view.
+    const resetEntitySelection = () => {
+        setSelectedEntity(null);
+        setEditingEntity(null);
+        setShowGraph(false);
+        setInspectedEntity(null);
+    };
+
     useEffect(() => {
         if (authenticated && selectedProjectId) {
             getEntities(selectedProjectId).then(data => setEntities(data));
-            setSelectedEntity(null);
-            setEditingEntity(null);
-            setShowGraph(false);
-            setInspectedEntity(null);
+            resetEntitySelection();
         }
     }, [authenticated, selectedProjectId]);
 
@@ -88,9 +95,7 @@ function App() {
             if (selectedProjectId === id) {
                 setSelectedProjectId(null);
                 setEntities([]);
-                setSelectedEntity(null);
-                setEditingEntity(null);
-                setInspectedEntity(null);
+                resetEntitySelection();
             }
         });
     };
@@ -98,9 +103,7 @@ function App() {
     const handleBackToProjects = () => {
         setSelectedProjectId(null);
         setEntities([]);
-        setSelectedEntity(null);
-        setEditingEntity(null);
-        setInspectedEntity(null);
+        resetEntitySelection();
     };
 
     const handleLogout = () => {
@@ -109,9 +112,7 @@ function App() {
             setProjects([]);
             setSelectedProjectId(null);
             setEntities([]);
-            setSelectedEntity(null);
-            setEditingEntity(null);
-            setInspectedEntity(null);
+            resetEntitySelection();
         });
     };
 
@@ -138,6 +139,10 @@ function App() {
         deleteEntity(id).then(() => {
             setEntities(prev => prev.filter(e => e.id !== id));
             setSelectedEntity(null);
+            // Only close the inspector if it's showing the entity that was
+            // just deleted — it may be open on an unrelated entity (e.g. the
+            // user inspected one entity from the graph, then switched back
+            // to the detail view of a different one and deleted that).
             setInspectedEntity(prev => (prev?.id === id ? null : prev));
         });
     };
