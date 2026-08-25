@@ -219,6 +219,8 @@ function App() {
                             entity={selectedEntity}
                             entities={entities}
                             onFocusEntity={setSelectedEntity}
+                            // TODO: wire to the right-side inspector panel (next step)
+                            onInspectEntity={(e) => console.log("inspect", e)}
                         />
                     </div>
                 ) : editingEntity ? (

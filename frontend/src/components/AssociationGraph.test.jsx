@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import AssociationGraph from './AssociationGraph';
 
 const gandalf = {
@@ -26,5 +27,34 @@ describe('AssociationGraph', () => {
     it('shows an empty-state message when the entity has no associations', () => {
         render(<AssociationGraph entity={frodo} entities={[gandalf, frodo]} onFocusEntity={jest.fn()} />);
         expect(screen.getByText(/no associations yet/i)).toBeInTheDocument();
+    });
+
+    it('renders the type legend', () => {
+        render(<AssociationGraph entity={gandalf} entities={[gandalf, frodo]} onFocusEntity={jest.fn()} />);
+        expect(screen.getByText('Person')).toBeInTheDocument();
+        expect(screen.getByText('Place')).toBeInTheDocument();
+        expect(screen.getByText('Thing')).toBeInTheDocument();
+        expect(screen.getByText('Note')).toBeInTheDocument();
+    });
+
+    it('clicking a node\'s eye icon inspects that entity without recentering the graph', async () => {
+        const onFocusEntity = jest.fn();
+        const onInspectEntity = jest.fn();
+        render(
+            <AssociationGraph
+                entity={gandalf}
+                entities={[gandalf, frodo]}
+                onFocusEntity={onFocusEntity}
+                onInspectEntity={onInspectEntity}
+            />
+        );
+
+        // jsdom never resolves React Flow's initial measurement pass, so nodes
+        // stay `visibility: hidden`, which getByRole excludes from the
+        // accessibility tree; getByTitle isn't visibility-filtered.
+        await userEvent.click(screen.getByTitle('View Frodo'));
+
+        expect(onInspectEntity).toHaveBeenCalledWith(frodo);
+        expect(onFocusEntity).not.toHaveBeenCalled();
     });
 });

@@ -2,15 +2,11 @@ import { useMemo } from "react";
 import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import FloatingEdge from "./FloatingEdge";
+import EntityNode from "./EntityNode";
+import GraphLegend from "./GraphLegend";
 
 const edgeTypes = { floating: FloatingEdge };
-
-const TYPE_COLORS = {
-    person: "#6f42c1",
-    place: "#0d6efd",
-    thing: "#198754",
-    note: "#adb5bd",
-};
+const nodeTypes = { entity: EntityNode };
 
 const CENTER_WIDTH = 180;
 const NEIGHBOR_WIDTH = 150;
@@ -25,7 +21,7 @@ function otherEntityTitle(assoc, centerId) {
     return assoc.entity_id_1 === centerId ? assoc.entity_2_title : assoc.entity_1_title;
 }
 
-function layout(entity, entities) {
+function layout(entity, entities, onInspect) {
     const associations = entity.associations || [];
     const entityById = new Map(entities.map(e => [e.id, e]));
 
@@ -36,15 +32,15 @@ function layout(entity, entities) {
     const nodes = [
         {
             id: String(entity.id),
-            data: { label: entity.title },
-            position: { x: -CENTER_WIDTH / 2, y: -NODE_HEIGHT / 2 },
-            style: {
-                borderColor: TYPE_COLORS[entity.entity_type] || TYPE_COLORS.note,
-                borderWidth: 3,
-                width: CENTER_WIDTH,
-                height: NODE_HEIGHT,
-                fontWeight: 600,
+            type: "entity",
+            data: {
+                label: entity.title,
+                entityType: entity.entity_type,
+                isCenter: true,
+                onInspect: () => onInspect(entity),
             },
+            position: { x: -CENTER_WIDTH / 2, y: -NODE_HEIGHT / 2 },
+            style: { width: CENTER_WIDTH, height: NODE_HEIGHT },
         },
     ];
 
@@ -52,22 +48,23 @@ function layout(entity, entities) {
     associations.forEach((assoc, i) => {
         const neighborId = otherEntityId(assoc, entity.id);
         const neighborTitle = otherEntityTitle(assoc, entity.id);
-        const neighborType = entityById.get(neighborId)?.entity_type;
+        const neighbor = entityById.get(neighborId);
         const angle = (2 * Math.PI * i) / count - Math.PI / 2;
 
         nodes.push({
             id: String(neighborId),
-            data: { label: neighborTitle },
+            type: "entity",
+            data: {
+                label: neighborTitle,
+                entityType: neighbor?.entity_type,
+                isCenter: false,
+                onInspect: () => onInspect(neighbor || { id: neighborId, title: neighborTitle }),
+            },
             position: {
                 x: RADIUS * Math.cos(angle) - NEIGHBOR_WIDTH / 2,
                 y: RADIUS * Math.sin(angle) - NODE_HEIGHT / 2,
             },
-            style: {
-                borderColor: TYPE_COLORS[neighborType] || TYPE_COLORS.note,
-                borderWidth: 2,
-                width: NEIGHBOR_WIDTH,
-                height: NODE_HEIGHT,
-            },
+            style: { width: NEIGHBOR_WIDTH, height: NODE_HEIGHT },
         });
     });
 
@@ -83,8 +80,11 @@ function layout(entity, entities) {
     return { nodes, edges };
 }
 
-export default function AssociationGraph({ entity, entities, onFocusEntity }) {
-    const { nodes, edges } = useMemo(() => layout(entity, entities), [entity, entities]);
+export default function AssociationGraph({ entity, entities, onFocusEntity, onInspectEntity }) {
+    const { nodes, edges } = useMemo(
+        () => layout(entity, entities, onInspectEntity || (() => {})),
+        [entity, entities, onInspectEntity]
+    );
 
     if ((entity.associations || []).length === 0) {
         return <div className="p-4 text-muted">{entity.title} has no associations yet.</div>;
@@ -96,6 +96,7 @@ export default function AssociationGraph({ entity, entities, onFocusEntity }) {
                 key={entity.id}
                 nodes={nodes}
                 edges={edges}
+                nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
                 onNodeClick={(_, node) => {
@@ -106,6 +107,7 @@ export default function AssociationGraph({ entity, entities, onFocusEntity }) {
             >
                 <Background />
                 <Controls />
+                <GraphLegend />
             </ReactFlow>
         </div>
     );

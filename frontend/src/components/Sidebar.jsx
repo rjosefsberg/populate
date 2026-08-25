@@ -102,14 +102,14 @@ function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProje
                     <div className="btn-group w-100 mb-2" role="group" aria-label="Sidebar view mode">
                         <button
                             type="button"
-                            className={`btn btn-sm ${viewMode === "flat" ? "btn-secondary" : "btn-outline-secondary"}`}
+                            className={`w-50 btn btn-sm ${viewMode === "flat" ? "btn-secondary" : "btn-outline-secondary"}`}
                             onClick={() => setViewMode("flat")}
                         >
                             List
                         </button>
                         <button
                             type="button"
-                            className={`btn btn-sm ${viewMode === "grouped" ? "btn-secondary" : "btn-outline-secondary"}`}
+                            className={`w-50 btn btn-sm ${viewMode === "grouped" ? "btn-secondary" : "btn-outline-secondary"}`}
                             onClick={() => setViewMode("grouped")}
                         >
                             Grouped
