@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AssociationGraph from './AssociationGraph';
 
@@ -55,6 +55,24 @@ describe('AssociationGraph', () => {
         await userEvent.click(screen.getByTitle('View Frodo'));
 
         expect(onInspectEntity).toHaveBeenCalledWith(frodo);
+        expect(onFocusEntity).not.toHaveBeenCalled();
+    });
+
+    it('double-clicking a neighbor node recenters the graph on it', () => {
+        const onFocusEntity = jest.fn();
+        render(<AssociationGraph entity={gandalf} entities={[gandalf, frodo]} onFocusEntity={onFocusEntity} />);
+
+        fireEvent.doubleClick(screen.getByText('Frodo'));
+
+        expect(onFocusEntity).toHaveBeenCalledWith(frodo);
+    });
+
+    it('double-clicking the center node does not recenter', () => {
+        const onFocusEntity = jest.fn();
+        render(<AssociationGraph entity={gandalf} entities={[gandalf, frodo]} onFocusEntity={onFocusEntity} />);
+
+        fireEvent.doubleClick(screen.getByText('Gandalf'));
+
         expect(onFocusEntity).not.toHaveBeenCalled();
     });
 });

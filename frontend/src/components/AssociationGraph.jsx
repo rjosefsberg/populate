@@ -99,7 +99,7 @@ export default function AssociationGraph({ entity, entities, onFocusEntity, onIn
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
-                onNodeClick={(_, node) => {
+                onNodeDoubleClick={(_, node) => {
                     if (node.id === String(entity.id)) return;
                     const neighbor = entities.find(e => String(e.id) === node.id);
                     if (neighbor) onFocusEntity(neighbor);
