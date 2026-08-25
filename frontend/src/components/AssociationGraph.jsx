@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
-import dagre from "dagre";
 import "@xyflow/react/dist/style.css";
-import { getProjectAssociations } from "../api/associations";
 
 const TYPE_COLORS = {
     person: "#6f42c1",
@@ -11,79 +9,87 @@ const TYPE_COLORS = {
     note: "#adb5bd",
 };
 
-const NODE_WIDTH = 160;
-const NODE_HEIGHT = 40;
+const CENTER_WIDTH = 180;
+const NEIGHBOR_WIDTH = 150;
+const RADIUS = 280;
 
-function layout(entities, associations) {
-    const graph = new dagre.graphlib.Graph();
-    graph.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 80 });
-    graph.setDefaultEdgeLabel(() => ({}));
+function otherEntityId(assoc, centerId) {
+    return assoc.entity_id_1 === centerId ? assoc.entity_id_2 : assoc.entity_id_1;
+}
 
-    entities.forEach(e => graph.setNode(String(e.id), { width: NODE_WIDTH, height: NODE_HEIGHT }));
-    associations.forEach(a =>
-        graph.setEdge(String(a.entity_id_1), String(a.entity_id_2))
-    );
+function otherEntityTitle(assoc, centerId) {
+    return assoc.entity_id_1 === centerId ? assoc.entity_2_title : assoc.entity_1_title;
+}
 
-    dagre.layout(graph);
+function layout(entity, entities) {
+    const associations = entity.associations || [];
+    const entityById = new Map(entities.map(e => [e.id, e]));
 
-    const nodes = entities.map(e => {
-        const pos = graph.node(String(e.id));
-        return {
-            id: String(e.id),
-            data: { label: e.title },
-            position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
+    const nodes = [
+        {
+            id: String(entity.id),
+            data: { label: entity.title },
+            position: { x: 0, y: 0 },
             style: {
-                borderColor: TYPE_COLORS[e.entity_type] || TYPE_COLORS.note,
-                borderWidth: 2,
-                width: NODE_WIDTH,
+                borderColor: TYPE_COLORS[entity.entity_type] || TYPE_COLORS.note,
+                borderWidth: 3,
+                width: CENTER_WIDTH,
+                fontWeight: 600,
             },
-        };
+        },
+    ];
+
+    const count = associations.length;
+    associations.forEach((assoc, i) => {
+        const neighborId = otherEntityId(assoc, entity.id);
+        const neighborTitle = otherEntityTitle(assoc, entity.id);
+        const neighborType = entityById.get(neighborId)?.entity_type;
+        const angle = (2 * Math.PI * i) / count - Math.PI / 2;
+
+        nodes.push({
+            id: String(neighborId),
+            data: { label: neighborTitle },
+            position: {
+                x: RADIUS * Math.cos(angle) - NEIGHBOR_WIDTH / 2,
+                y: RADIUS * Math.sin(angle) - 20,
+            },
+            style: {
+                borderColor: TYPE_COLORS[neighborType] || TYPE_COLORS.note,
+                borderWidth: 2,
+                width: NEIGHBOR_WIDTH,
+            },
+        });
     });
 
-    const edges = associations.map(a => ({
-        id: String(a.id),
-        source: String(a.entity_id_1),
-        target: String(a.entity_id_2),
-        label: a.description,
+    const edges = associations.map(assoc => ({
+        id: String(assoc.id),
+        source: String(entity.id),
+        target: String(otherEntityId(assoc, entity.id)),
+        label: assoc.description,
         markerEnd: { type: MarkerType.ArrowClosed },
     }));
 
     return { nodes, edges };
 }
 
-export default function AssociationGraph({ projectId, entities, onSelectEntity }) {
-    const [associations, setAssociations] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function AssociationGraph({ entity, entities, onFocusEntity }) {
+    const { nodes, edges } = useMemo(() => layout(entity, entities), [entity, entities]);
 
-    useEffect(() => {
-        if (!projectId) return;
-        setLoading(true);
-        getProjectAssociations(projectId).then(data => {
-            setAssociations(data);
-            setLoading(false);
-        });
-    }, [projectId]);
-
-    const { nodes, edges } = useMemo(
-        () => layout(entities, associations),
-        [entities, associations]
-    );
-
-    if (loading) return null;
-
-    if (entities.length === 0) {
-        return <div className="p-4 text-muted">No entities yet. Add some to see the association graph.</div>;
+    if ((entity.associations || []).length === 0) {
+        return <div className="p-4 text-muted">{entity.title} has no associations yet.</div>;
     }
 
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <ReactFlow
+                key={entity.id}
                 nodes={nodes}
                 edges={edges}
                 fitView
                 onNodeClick={(_, node) => {
-                    const entity = entities.find(e => String(e.id) === node.id);
-                    if (entity) onSelectEntity(entity);
+                    if (node.id === String(entity.id)) return;
+                    const neighbor = entities.find(e => String(e.id) === node.id);
+                    if (neighbor) onFocusEntity(neighbor);
                 }}
             >
                 <Background />

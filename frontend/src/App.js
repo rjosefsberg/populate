@@ -52,6 +52,13 @@ function App() {
         }
     }, [authenticated, selectedProjectId]);
 
+    // Selecting a different entity from the sidebar (as opposed to recentering
+    // the graph on a neighbor) should drop back to the detail view.
+    const handleSelectEntity = (entity) => {
+        setSelectedEntity(entity);
+        setShowGraph(false);
+    };
+
     const handleCreateProject = (name) => {
         createProject({name}).then(newProject => {
             setProjects(prev => [...prev, newProject]);
@@ -176,7 +183,7 @@ function App() {
                 onBackToProjects={handleBackToProjects}
                 entities={entities}
                 selectedId={selectedEntity?.id}
-                onSelect={setSelectedEntity}
+                onSelect={handleSelectEntity}
                 footer={
                     <div>
                         <button className="btn btn-outline-secondary btn-sm w-100" style={{fontSize: "0.75rem"}}
@@ -192,13 +199,13 @@ function App() {
                 }
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
-                {selectedProjectId && (
+                {selectedEntity && !editingEntity && (
                     <Button
                         variant={showGraph ? "secondary" : "outline-secondary"}
                         className="mt-2"
                         onClick={() => setShowGraph(prev => !prev)}
                     >
-                        {showGraph ? "List view" : "Graph view"}
+                        {showGraph ? "View details" : "Graph view"}
                     </Button>
                 )}
             </Sidebar>
@@ -206,15 +213,12 @@ function App() {
             <div className="flex-grow-1">
                 {!selectedProjectId ? (
                     <SelectProjectPrompt/>
-                ) : showGraph ? (
+                ) : showGraph && selectedEntity ? (
                     <div style={{ height: "100vh" }}>
                         <AssociationGraph
-                            projectId={selectedProjectId}
+                            entity={selectedEntity}
                             entities={entities}
-                            onSelectEntity={(entity) => {
-                                setSelectedEntity(entity);
-                                setShowGraph(false);
-                            }}
+                            onFocusEntity={setSelectedEntity}
                         />
                     </div>
                 ) : editingEntity ? (
