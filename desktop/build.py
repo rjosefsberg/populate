@@ -20,14 +20,35 @@ BIN_DIR = DESKTOP / "src-tauri" / "binaries"
 
 def run(cmd, cwd):
     print(f"\n$ {' '.join(cmd)}  (in {cwd})")
-    subprocess.run(cmd, cwd=cwd, check=True, shell=(sys.platform == "win32"))
+    try:
+        subprocess.run(cmd, cwd=cwd, check=True, shell=(sys.platform == "win32"))
+    except FileNotFoundError:
+        raise SystemExit(
+            f"Could not run '{cmd[0]}'. It's not on PATH in this shell.\n"
+            "If you just installed a tool, close and reopen this terminal so it "
+            "picks up the updated PATH, then try again."
+        )
 
 
 def rust_target_triple() -> str:
-    out = subprocess.run(
-        ["rustc", "-vV"], capture_output=True, text=True, check=True, shell=(sys.platform == "win32")
-    ).stdout
-    for line in out.splitlines():
+    try:
+        result = subprocess.run(
+            ["rustc", "-vV"], capture_output=True, text=True, shell=(sys.platform == "win32")
+        )
+    except FileNotFoundError:
+        raise SystemExit(
+            "Could not run 'rustc'. It's not on PATH in this shell.\n"
+            "If you just installed Rust, close and reopen this terminal (or run "
+            "`refreshenv` if you have it) so it picks up the updated PATH, then try again."
+        )
+    if result.returncode != 0:
+        raise SystemExit(
+            "'rustc -vV' failed:\n"
+            f"{result.stderr or result.stdout}\n"
+            "If Rust was just installed, close and reopen this terminal so it picks up "
+            "the updated PATH, then try again."
+        )
+    for line in result.stdout.splitlines():
         if line.startswith("host:"):
             return line.split(":", 1)[1].strip()
     raise RuntimeError("Could not determine rustc host triple")
