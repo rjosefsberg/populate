@@ -38,6 +38,10 @@ frontend/.env.production.local
 
 # Terraform state (may contain secrets)
 *.tfstate
+
+# Desktop app (Tauri/Rust build output and generated sidecar binary)
+desktop/src-tauri/target/
+desktop/src-tauri/binaries/
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl

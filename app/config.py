@@ -8,6 +8,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///populate.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     APP_PASSWORD = os.environ.get("APP_PASSWORD")
+    DESKTOP_MODE = os.environ.get("DESKTOP_MODE") == "1"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False  # set True behind HTTPS

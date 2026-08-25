@@ -20,6 +20,8 @@ def _check_credentials(username: str, password: str) -> bool:
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if current_app.config.get("DESKTOP_MODE"):
+            return f(*args, **kwargs)
         if not session.get("authenticated"):
             return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
@@ -46,4 +48,6 @@ def register_auth_routes(app):
 
     @app.route("/api/auth/me", methods=["GET"])
     def me():
+        if current_app.config.get("DESKTOP_MODE"):
+            return jsonify({"authenticated": True})
         return jsonify({"authenticated": bool(session.get("authenticated"))})
