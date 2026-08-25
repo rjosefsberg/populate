@@ -14,6 +14,7 @@ const TYPE_COLORS = {
 
 const CENTER_WIDTH = 180;
 const NEIGHBOR_WIDTH = 150;
+const NODE_HEIGHT = 40;
 const RADIUS = 280;
 
 function otherEntityId(assoc, centerId) {
@@ -28,15 +29,20 @@ function layout(entity, entities) {
     const associations = entity.associations || [];
     const entityById = new Map(entities.map(e => [e.id, e]));
 
+    // The center node's position is its own on-circle point too: offsetting
+    // it by half its size (like every neighbor below) keeps it exactly at
+    // the hub, so the neighbor angles come out as the standard 360/count
+    // split instead of skewed by half a node's width/height.
     const nodes = [
         {
             id: String(entity.id),
             data: { label: entity.title },
-            position: { x: 0, y: 0 },
+            position: { x: -CENTER_WIDTH / 2, y: -NODE_HEIGHT / 2 },
             style: {
                 borderColor: TYPE_COLORS[entity.entity_type] || TYPE_COLORS.note,
                 borderWidth: 3,
                 width: CENTER_WIDTH,
+                height: NODE_HEIGHT,
                 fontWeight: 600,
             },
         },
@@ -54,12 +60,13 @@ function layout(entity, entities) {
             data: { label: neighborTitle },
             position: {
                 x: RADIUS * Math.cos(angle) - NEIGHBOR_WIDTH / 2,
-                y: RADIUS * Math.sin(angle) - 20,
+                y: RADIUS * Math.sin(angle) - NODE_HEIGHT / 2,
             },
             style: {
                 borderColor: TYPE_COLORS[neighborType] || TYPE_COLORS.note,
                 borderWidth: 2,
                 width: NEIGHBOR_WIDTH,
+                height: NODE_HEIGHT,
             },
         });
     });
