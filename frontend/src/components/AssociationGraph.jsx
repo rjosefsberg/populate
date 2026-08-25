@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import FloatingEdge from "./FloatingEdge";
+
+const edgeTypes = { floating: FloatingEdge };
 
 const TYPE_COLORS = {
     person: "#6f42c1",
@@ -66,6 +69,7 @@ function layout(entity, entities) {
         source: String(entity.id),
         target: String(otherEntityId(assoc, entity.id)),
         label: assoc.description,
+        type: "floating",
         markerEnd: { type: MarkerType.ArrowClosed },
     }));
 
@@ -85,6 +89,7 @@ export default function AssociationGraph({ entity, entities, onFocusEntity }) {
                 key={entity.id}
                 nodes={nodes}
                 edges={edges}
+                edgeTypes={edgeTypes}
                 fitView
                 onNodeClick={(_, node) => {
                     if (node.id === String(entity.id)) return;
