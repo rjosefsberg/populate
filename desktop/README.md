@@ -55,9 +55,23 @@ the build script does not regenerate them.
 
 ## Distributing to friends
 
-The installer is unsigned, so Windows SmartScreen will warn on first run.
-Friends click "More info" -> "Run anyway". Code signing removes this
-warning but needs a paid certificate and is out of scope here.
+Three things that don't hold on a genuinely clean Windows install, and how
+this build handles (or doesn't handle) each:
+
+- **WebView2 Runtime.** Tauri renders through it; Windows 11 ships it,
+  Windows 10 usually has it via Windows Update but that's not guaranteed
+  offline. `tauri.conf.json` sets `webviewInstallMode: offlineInstaller`,
+  which bundles the full WebView2 installer (~120MB) into our installer —
+  no internet needed on the friend's machine, at the cost of a bigger
+  download.
+- **Antivirus / Defender false positives.** PyInstaller's single-file
+  bootloader commonly trips Defender's heuristics, and the installer is
+  unsigned on top of that. A friend's first run may get quarantined rather
+  than just SmartScreen-warned. No fix without code signing (paid cert,
+  out of scope here) — worth testing on a real clean VM before wide
+  distribution, and warning friends it may happen.
+- **Windows SmartScreen.** Unsigned installer, so SmartScreen warns on
+  first run regardless. Friends click "More info" -> "Run anyway".
 
 Each friend's data lives at `%APPDATA%\Populate\populate.db` on their own
 machine, independent of everyone else's.
