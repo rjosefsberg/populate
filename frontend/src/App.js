@@ -15,6 +15,7 @@ import UsageButton from "./components/UsageButton";
 import SelectProjectPrompt from "./components/SelectProjectPrompt";
 import SettingsModal from "./components/SettingsModal";
 import AssociationGraph from "./components/AssociationGraph";
+import InspectorPanel from "./components/InspectorPanel";
 import { getSettings } from "./api/settings";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
     const [showGraph, setShowGraph] = useState(false);
+    const [inspectedEntity, setInspectedEntity] = useState(null);
     const [modalShow, setModalShow] = React.useState(false);
     const [settingsShow, setSettingsShow] = React.useState(false);
     const [settings, setSettings] = React.useState(null);
@@ -49,6 +51,7 @@ function App() {
             setSelectedEntity(null);
             setEditingEntity(null);
             setShowGraph(false);
+            setInspectedEntity(null);
         }
     }, [authenticated, selectedProjectId]);
 
@@ -57,6 +60,14 @@ function App() {
     const handleSelectEntity = (entity) => {
         setSelectedEntity(entity);
         setShowGraph(false);
+    };
+
+    // Edit, whether launched from the detail page or the inspector panel,
+    // always exits the graph/panel and shows the edit form.
+    const handleOpenEdit = (entity) => {
+        setShowGraph(false);
+        setInspectedEntity(null);
+        setEditingEntity(entity);
     };
 
     const handleCreateProject = (name) => {
@@ -79,6 +90,7 @@ function App() {
                 setEntities([]);
                 setSelectedEntity(null);
                 setEditingEntity(null);
+                setInspectedEntity(null);
             }
         });
     };
@@ -88,6 +100,7 @@ function App() {
         setEntities([]);
         setSelectedEntity(null);
         setEditingEntity(null);
+        setInspectedEntity(null);
     };
 
     const handleLogout = () => {
@@ -98,6 +111,7 @@ function App() {
             setEntities([]);
             setSelectedEntity(null);
             setEditingEntity(null);
+            setInspectedEntity(null);
         });
     };
 
@@ -124,6 +138,7 @@ function App() {
         deleteEntity(id).then(() => {
             setEntities(prev => prev.filter(e => e.id !== id));
             setSelectedEntity(null);
+            setInspectedEntity(prev => (prev?.id === id ? null : prev));
         });
     };
 
@@ -219,8 +234,7 @@ function App() {
                             entity={selectedEntity}
                             entities={entities}
                             onFocusEntity={setSelectedEntity}
-                            // TODO: wire to the right-side inspector panel (next step)
-                            onInspectEntity={(e) => console.log("inspect", e)}
+                            onInspectEntity={setInspectedEntity}
                         />
                     </div>
                 ) : editingEntity ? (
@@ -237,12 +251,18 @@ function App() {
                 ) : (
                     <EntityDetail
                         entity={selectedEntity}
-                        onEdit={setEditingEntity}
+                        onEdit={handleOpenEdit}
                         onDelete={handleDelete}
                         onEntityChange={handleEntityChange}
                     />
                 )}
             </div>
+
+            <InspectorPanel
+                entity={inspectedEntity}
+                onClose={() => setInspectedEntity(null)}
+                onEdit={handleOpenEdit}
+            />
         </div>
     );
 }
