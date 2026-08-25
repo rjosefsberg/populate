@@ -135,3 +135,12 @@ describe('Sidebar — project mode', () => {
         expect(onOpenProject).toHaveBeenCalledWith(1);
     });
 });
+
+describe('Sidebar — hideEntityList', () => {
+    it('hides the sort/grouping controls and entity list when hideEntityList is set', () => {
+        render(<Sidebar {...entityModeProps} entities={entities} selectedId={null} onSelect={jest.fn()} hideEntityList />);
+        expect(screen.queryByLabelText(/sort entities/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: /sidebar view mode/i })).not.toBeInTheDocument();
+        expect(screen.queryByText('Gandalf')).not.toBeInTheDocument();
+    });
+});

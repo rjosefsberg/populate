@@ -199,6 +199,7 @@ function App() {
                 entities={entities}
                 selectedId={selectedEntity?.id}
                 onSelect={handleSelectEntity}
+                hideEntityList={showGraph}
                 footer={
                     <div>
                         <button className="btn btn-outline-secondary btn-sm w-100" style={{fontSize: "0.75rem"}}

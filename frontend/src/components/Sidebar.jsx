@@ -51,7 +51,7 @@ function EntityListItem({ entity, selectedId, onSelect }) {
     );
 }
 
-function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProject, onDeleteProject, projectName, onBackToProjects, entities, selectedId, onSelect, children, footer }) {
+function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProject, onDeleteProject, projectName, onBackToProjects, entities, selectedId, onSelect, children, footer, hideEntityList }) {
     const [viewMode, setViewMode] = useState("flat");
     const [sortBy, setSortBy] = useState("updated");
     const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -86,78 +86,82 @@ function Sidebar({ mode, projects, onOpenProject, onCreateProject, onRenameProje
                     {/* Generate form at the top */}
                     {children}
 
-                    <hr className="border-secondary" />
+                    {!hideEntityList && (
+                        <>
+                            <hr className="border-secondary" />
 
-                    <div className="d-flex gap-2 mb-2">
-                        <select
-                            className="form-select form-select-sm bg-dark text-white border-secondary"
-                            value={sortBy}
-                            onChange={e => setSortBy(e.target.value)}
-                            aria-label="Sort entities"
-                        >
-                            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        </select>
-                    </div>
+                            <div className="d-flex gap-2 mb-2">
+                                <select
+                                    className="form-select form-select-sm bg-dark text-white border-secondary"
+                                    value={sortBy}
+                                    onChange={e => setSortBy(e.target.value)}
+                                    aria-label="Sort entities"
+                                >
+                                    {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                </select>
+                            </div>
 
-                    <div className="btn-group w-100 mb-2" role="group" aria-label="Sidebar view mode">
-                        <button
-                            type="button"
-                            className={`w-50 btn btn-sm ${viewMode === "flat" ? "btn-secondary" : "btn-outline-secondary"}`}
-                            onClick={() => setViewMode("flat")}
-                        >
-                            List
-                        </button>
-                        <button
-                            type="button"
-                            className={`w-50 btn btn-sm ${viewMode === "grouped" ? "btn-secondary" : "btn-outline-secondary"}`}
-                            onClick={() => setViewMode("grouped")}
-                        >
-                            Grouped
-                        </button>
-                    </div>
+                            <div className="btn-group w-100 mb-2" role="group" aria-label="Sidebar view mode">
+                                <button
+                                    type="button"
+                                    className={`w-50 btn btn-sm ${viewMode === "flat" ? "btn-secondary" : "btn-outline-secondary"}`}
+                                    onClick={() => setViewMode("flat")}
+                                >
+                                    List
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`w-50 btn btn-sm ${viewMode === "grouped" ? "btn-secondary" : "btn-outline-secondary"}`}
+                                    onClick={() => setViewMode("grouped")}
+                                >
+                                    Grouped
+                                </button>
+                            </div>
 
-                    {/* Entity list */}
-                    {viewMode === "grouped" ? (
-                        groups.map(group => {
-                            const isOpen = !collapsedGroups[group.type];
-                            return (
-                                <div key={group.type} className="mb-2">
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm btn-link text-white text-decoration-none d-flex align-items-center gap-1 px-0 mb-1 mt-2 w-100"
-                                        onClick={() => toggleGroup(group.type)}
-                                        aria-expanded={isOpen}
-                                    >
-                                        <FaChevronRight
-                                            size={10}
-                                            style={{
-                                                transition: "transform 0.15s ease",
-                                                transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                                            }}
-                                        />
-                                        <span
-                                            className="text-uppercase fw-semibold"
-                                            style={{ fontSize: "0.7rem", letterSpacing: "0.08em", color: "#adb5bd" }}
-                                        >
-                                            {group.label}
-                                        </span>
-                                    </button>
-                                    {isOpen && (
-                                        <ul className="list-unstyled">
-                                            {group.entities.map(entity => (
-                                                <EntityListItem key={entity.id} entity={entity} selectedId={selectedId} onSelect={onSelect} />
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <ul className="list-unstyled">
-                            {sortedEntities.map(entity => (
-                                <EntityListItem key={entity.id} entity={entity} selectedId={selectedId} onSelect={onSelect} />
-                            ))}
-                        </ul>
+                            {/* Entity list */}
+                            {viewMode === "grouped" ? (
+                                groups.map(group => {
+                                    const isOpen = !collapsedGroups[group.type];
+                                    return (
+                                        <div key={group.type} className="mb-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-link text-white text-decoration-none d-flex align-items-center gap-1 px-0 mb-1 mt-2 w-100"
+                                                onClick={() => toggleGroup(group.type)}
+                                                aria-expanded={isOpen}
+                                            >
+                                                <FaChevronRight
+                                                    size={10}
+                                                    style={{
+                                                        transition: "transform 0.15s ease",
+                                                        transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+                                                    }}
+                                                />
+                                                <span
+                                                    className="text-uppercase fw-semibold"
+                                                    style={{ fontSize: "0.7rem", letterSpacing: "0.08em", color: "#adb5bd" }}
+                                                >
+                                                    {group.label}
+                                                </span>
+                                            </button>
+                                            {isOpen && (
+                                                <ul className="list-unstyled">
+                                                    {group.entities.map(entity => (
+                                                        <EntityListItem key={entity.id} entity={entity} selectedId={selectedId} onSelect={onSelect} />
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <ul className="list-unstyled">
+                                    {sortedEntities.map(entity => (
+                                        <EntityListItem key={entity.id} entity={entity} selectedId={selectedId} onSelect={onSelect} />
+                                    ))}
+                                </ul>
+                            )}
+                        </>
                     )}
                 </>
             )}
