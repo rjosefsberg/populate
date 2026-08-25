@@ -8,6 +8,12 @@ import '@testing-library/jest-dom';
 // when it tries to scroll the caret into view. Stub these out with harmless no-ops/zeros.
 if (typeof window !== 'undefined') {
     window.HTMLElement.prototype.scrollIntoView = window.HTMLElement.prototype.scrollIntoView || function () {};
+    // jsdom doesn't implement ResizeObserver; React Flow relies on it to size the canvas.
+    window.ResizeObserver = window.ResizeObserver || class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
     Range.prototype.getBoundingClientRect = () => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 });
     Range.prototype.getClientRects = () => ({
         length: 0,

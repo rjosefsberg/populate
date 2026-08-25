@@ -14,6 +14,7 @@ import AddEntityModal from "./components/AddEntityModal";
 import UsageButton from "./components/UsageButton";
 import SelectProjectPrompt from "./components/SelectProjectPrompt";
 import SettingsModal from "./components/SettingsModal";
+import AssociationGraph from "./components/AssociationGraph";
 import { getSettings } from "./api/settings";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
     const [entities, setEntities] = useState([]);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const [editingEntity, setEditingEntity] = useState(null);
+    const [showGraph, setShowGraph] = useState(false);
     const [modalShow, setModalShow] = React.useState(false);
     const [settingsShow, setSettingsShow] = React.useState(false);
     const [settings, setSettings] = React.useState(null);
@@ -46,6 +48,7 @@ function App() {
             getEntities(selectedProjectId).then(data => setEntities(data));
             setSelectedEntity(null);
             setEditingEntity(null);
+            setShowGraph(false);
         }
     }, [authenticated, selectedProjectId]);
 
@@ -189,11 +192,31 @@ function App() {
                 }
             >
                 <Button variant="primary" onClick={() => setModalShow(true)}>Create</Button>
+                {selectedProjectId && (
+                    <Button
+                        variant={showGraph ? "secondary" : "outline-secondary"}
+                        className="mt-2"
+                        onClick={() => setShowGraph(prev => !prev)}
+                    >
+                        {showGraph ? "List view" : "Graph view"}
+                    </Button>
+                )}
             </Sidebar>
 
             <div className="flex-grow-1">
                 {!selectedProjectId ? (
                     <SelectProjectPrompt/>
+                ) : showGraph ? (
+                    <div style={{ height: "100vh" }}>
+                        <AssociationGraph
+                            projectId={selectedProjectId}
+                            entities={entities}
+                            onSelectEntity={(entity) => {
+                                setSelectedEntity(entity);
+                                setShowGraph(false);
+                            }}
+                        />
+                    </div>
                 ) : editingEntity ? (
                     <div className="p-4">
                         <EditEntityForm
