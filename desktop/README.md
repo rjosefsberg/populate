@@ -39,11 +39,8 @@ The finished installer(s) (`.msi` and `.exe` from NSIS) are copied to
 
 - `desktop/backend.spec` builds the Flask backend into a single .exe via
   PyInstaller. Verified: it starts on `127.0.0.1:5000`, creates
-  `%APPDATA%\Populate\populate.db`, and serves `/api/entities` and
-  `/api/auth/me` correctly.
+  `%APPDATA%\Populate\populate.db`, and serves `/api/entities` correctly.
 - `frontend/build` builds cleanly via `npm run build`.
-- Desktop mode (`DESKTOP_MODE=1`, set by `desktop/backend_entry.py`) skips
-  the password login screen, since each install is single-user and local.
 - Tauri project files (`Cargo.toml`, `tauri.conf.json`, `src/main.rs`) are
   written but not yet built or run — that needs the Rust toolchain above.
 

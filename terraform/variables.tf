@@ -21,19 +21,6 @@ variable "anthropic_api_key" {
   sensitive   = true
 }
 
-variable "secret_key" {
-  description = "Flask session secret key"
-  type        = string
-  sensitive   = true
-}
-
-variable "app_password" {
-  description = "Login password for the app (leave empty to use admin:admin default)"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
 variable "ssh_cidr" {
   description = "CIDR block allowed to SSH into the instance (e.g. your home IP: 1.2.3.4/32)"
   type        = string

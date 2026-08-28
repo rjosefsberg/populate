@@ -26,7 +26,6 @@ describe('getAssociations', () => {
         mockFetch(data);
         const result = await getAssociations(7);
         expect(fetch).toHaveBeenCalledWith('/api/entities/7/associations', expect.objectContaining({
-            credentials: 'include',
         }));
         expect(result).toEqual(data);
     });
@@ -39,7 +38,6 @@ describe('createAssociation', () => {
         const result = await createAssociation(payload);
         expect(fetch).toHaveBeenCalledWith('/api/associations', expect.objectContaining({
             method: 'POST',
-            credentials: 'include',
             body: JSON.stringify(payload),
         }));
         expect(result.description).toBe('allies');
@@ -51,7 +49,6 @@ describe('deleteAssociation', () => {
         await deleteAssociation(3);
         expect(fetch).toHaveBeenCalledWith('/api/associations/3', expect.objectContaining({
             method: 'DELETE',
-            credentials: 'include',
         }));
     });
 });

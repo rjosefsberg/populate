@@ -25,11 +25,7 @@ data_dir = _user_data_dir()
 db_path = data_dir / "populate.db"
 
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
-os.environ.setdefault("SECRET_KEY", "populate-desktop-local")
 os.environ.setdefault("FLASK_ENV", "production")
-
-# Single local desktop user — skip the login screen entirely.
-os.environ["DESKTOP_MODE"] = "1"
 
 from app import create_app, db  # noqa: E402
 from app import models  # noqa: E402,F401  (registers all tables with db.metadata)

@@ -2,12 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
-// Mock the auth client so getMe returns authenticated=true
 jest.mock('./api/client', () => ({
-    getMe: jest.fn().mockResolvedValue({ authenticated: true }),
-    logout: jest.fn().mockResolvedValue({ ok: true }),
-    login: jest.fn(),
-    setUnauthorizedHandler: jest.fn(),
     apiFetch: jest.fn((url) => {
         if (typeof url === 'string' && url.startsWith('/api/projects')) {
             return Promise.resolve({

@@ -39,9 +39,7 @@ cp .env.example .env   # then fill in your values
 | Variable | Required | Description |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
-| `SECRET_KEY` | Yes | Random string for signing session cookies |
 | `DATABASE_URL` | No | Defaults to `sqlite:///populate.db` |
-| `APP_PASSWORD` | No | Login password — defaults to `admin:admin` if unset |
 
 ### 2. Install backend dependencies
 
@@ -85,7 +83,6 @@ docker run -d \
   -p 5000:5000 \
   -v $(pwd)/data:/data \
   -e ANTHROPIC_API_KEY=your-key \
-  -e SECRET_KEY=change-me \
   populate
 ```
 
@@ -145,9 +142,7 @@ terraform init
 
 terraform apply \
   -var="key_name=your-key-pair-name" \
-  -var="anthropic_api_key=your-anthropic-key" \
-  -var="secret_key=$(openssl rand -hex 32)" \
-  -var="app_password=your-chosen-password"
+  -var="anthropic_api_key=your-anthropic-key"
 ```
 
 Terraform will print the public IP and URL when done. The instance takes ~2 minutes to boot and start the container.
@@ -157,8 +152,6 @@ Terraform will print the public IP and URL when done. The instance takes ~2 minu
 ```
 http://<public-ip>
 ```
-
-Log in with `admin` / `admin` (or whatever you set `app_password` to).
 
 ### Updating the app
 
@@ -173,8 +166,6 @@ docker run -d \
   -p 80:5000 \
   -v /opt/populate/data:/data \
   -e ANTHROPIC_API_KEY=your-key \
-  -e SECRET_KEY=your-secret \
-  -e APP_PASSWORD=your-password \
   ghcr.io/<your-github-username>/populate:latest
 ```
 
@@ -212,10 +203,9 @@ Storage: SQLite (default) or PostgreSQL (set DATABASE_URL)
 | Path | Purpose |
 |---|---|
 | `app/routes.py` | HTTP handlers |
-| `app/auth.py` | Session-based auth, `@require_auth` decorator |
 | `app/services/assist_service.py` | Get-help chat prompt builder + Anthropic API call |
 | `app/utils/sanitize.py` | Input validation and sanitization |
-| `frontend/src/api/client.js` | Central fetch wrapper (credentials, 401 handling) |
+| `frontend/src/api/client.js` | Central fetch wrapper |
 | `frontend/src/components/RichTextEditor.jsx` | Entity description editor |
 | `frontend/src/components/AssistChatPanel.jsx` | Get-help chat with entity context picker |
 | `frontend/src/components/EditEntityForm.jsx` | Edit flow with associations and attachments |

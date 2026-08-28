@@ -25,18 +25,10 @@ def create_app(config_name="default", instance_path=None):
     logging.getLogger("anthropic").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
-    if app.config.get("SECRET_KEY") == "dev-secret-change-me":
-        app.logger.warning(
-            "SECRET_KEY is set to the insecure default — set a strong SECRET_KEY in .env"
-        )
-
     db.init_app(app)
     migrate.init_app(app, db)
     # CORS only needed when React dev server (port 3000) talks to Flask (port 5000)
     CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
-
-    from app.auth import register_auth_routes
-    register_auth_routes(app)
 
     from app.routes import register_routes
     register_routes(app)

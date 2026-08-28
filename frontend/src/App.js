@@ -2,12 +2,10 @@ import {useState, useEffect} from "react";
 import Sidebar from "./components/Sidebar";
 import EntityDetail from "./components/EntityDetail";
 import EditEntityForm from "./components/EditEntityForm";
-import LoginPage from "./components/LoginPage";
 import {getEntities, createEntity, updateEntity, deleteEntity} from "./api/entities";
 import {createAssociation} from "./api/associations";
 import {uploadAttachment} from "./api/attachments";
 import {getProjects, createProject, updateProject, deleteProject} from "./api/projects";
-import {getMe, logout, setUnauthorizedHandler} from "./api/client";
 import Button from "react-bootstrap/Button";
 import React from "react";
 import AddEntityModal from "./components/AddEntityModal";
@@ -19,7 +17,6 @@ import InspectorPanel from "./components/InspectorPanel";
 import { getSettings } from "./api/settings";
 
 function App() {
-    const [authenticated, setAuthenticated] = useState(null); // null = loading
     const [projects, setProjects] = useState([]);
     const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [entities, setEntities] = useState([]);
@@ -31,19 +28,10 @@ function App() {
     const [settingsShow, setSettingsShow] = React.useState(false);
     const [settings, setSettings] = React.useState(null);
 
-    // Redirect to login on any 401
-    setUnauthorizedHandler(() => setAuthenticated(false));
-
     useEffect(() => {
-        getMe().then(data => setAuthenticated(data.authenticated));
+        getProjects().then(data => setProjects(data));
+        getSettings().then(data => setSettings(data));
     }, []);
-
-    useEffect(() => {
-        if (authenticated) {
-            getProjects().then(data => setProjects(data));
-            getSettings().then(data => setSettings(data));
-        }
-    }, [authenticated]);
 
     // Clears whichever entity is selected/edited/inspected, without
     // touching the project list itself. Shared by every handler that leaves
@@ -56,11 +44,11 @@ function App() {
     };
 
     useEffect(() => {
-        if (authenticated && selectedProjectId) {
+        if (selectedProjectId) {
             getEntities(selectedProjectId).then(data => setEntities(data));
             resetEntitySelection();
         }
-    }, [authenticated, selectedProjectId]);
+    }, [selectedProjectId]);
 
     // Selecting a different entity from the sidebar (as opposed to recentering
     // the graph on a neighbor) should drop back to the detail view.
@@ -104,16 +92,6 @@ function App() {
         setSelectedProjectId(null);
         setEntities([]);
         resetEntitySelection();
-    };
-
-    const handleLogout = () => {
-        logout().then(() => {
-            setAuthenticated(false);
-            setProjects([]);
-            setSelectedProjectId(null);
-            setEntities([]);
-            resetEntitySelection();
-        });
     };
 
     const handleConfirm = (title, entityType, description, associations, files) => {
@@ -176,9 +154,6 @@ function App() {
         setSelectedEntity(updatedEntity);
     };
 
-    if (authenticated === null) return null; // loading splash
-    if (!authenticated) return <LoginPage onLogin={() => setAuthenticated(true)}/>;
-
     return (
         <div className="d-flex">
             <AddEntityModal
@@ -210,10 +185,6 @@ function App() {
                         <button className="btn btn-outline-secondary btn-sm w-100" style={{fontSize: "0.75rem"}}
                                 onClick={() => setSettingsShow(true)}>
                             Settings
-                        </button>
-                        <button className="btn btn-outline-secondary btn-sm w-100 mt-2" style={{fontSize: "0.75rem"}}
-                                onClick={handleLogout}>
-                            Sign out
                         </button>
                         {settings?.api_key_populated && <UsageButton/>}
                     </div>

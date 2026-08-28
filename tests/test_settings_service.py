@@ -20,14 +20,14 @@ def test_update_masks_value_resets_key_works_and_persists(app, clean_settings):
         assert result is None and err is not None
 
 
-def test_check_key_route_flips_key_works_and_persists(auth_client, db, clean_settings):
+def test_check_key_route_flips_key_works_and_persists(client, db, clean_settings):
     """Integration: PUT a key through the API, verify it via the route, confirm it sticks."""
-    auth_client.put("/api/settings/anthropic_api_key", json={"value": "sk-ant-good"})
+    client.put("/api/settings/anthropic_api_key", json={"value": "sk-ant-good"})
 
     with patch("anthropic.Anthropic") as MockClient:
         MockClient.return_value.models.list.return_value = MagicMock()
-        response = auth_client.post("/api/settings/check-key")
+        response = client.post("/api/settings/check-key")
 
     assert response.status_code == 200
     assert response.get_json()["key_works"] is True
-    assert auth_client.get("/api/settings").get_json()["key_works"] is True
+    assert client.get("/api/settings").get_json()["key_works"] is True

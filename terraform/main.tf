@@ -58,8 +58,6 @@ resource "aws_instance" "populate" {
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
     image             = var.image
     anthropic_api_key = var.anthropic_api_key
-    secret_key        = var.secret_key
-    app_password      = var.app_password
   })
 
   tags = {

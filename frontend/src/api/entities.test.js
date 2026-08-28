@@ -26,7 +26,6 @@ describe('getEntities', () => {
         mockFetch(data);
         const result = await getEntities();
         expect(fetch).toHaveBeenCalledWith('/api/entities', expect.objectContaining({
-            credentials: 'include',
         }));
         expect(result).toEqual(data);
     });
@@ -39,7 +38,6 @@ describe('createEntity', () => {
         const result = await createEntity(entity);
         expect(fetch).toHaveBeenCalledWith('/api/entities', expect.objectContaining({
             method: 'POST',
-            credentials: 'include',
             body: JSON.stringify(entity),
         }));
         expect(result.title).toBe('Frodo');
@@ -53,7 +51,6 @@ describe('updateEntity', () => {
         const result = await updateEntity(42, updated);
         expect(fetch).toHaveBeenCalledWith('/api/entities/42', expect.objectContaining({
             method: 'PUT',
-            credentials: 'include',
             body: JSON.stringify(updated),
         }));
         expect(result.title).toBe('Frodo Updated');
@@ -65,7 +62,6 @@ describe('deleteEntity', () => {
         await deleteEntity(5);
         expect(fetch).toHaveBeenCalledWith('/api/entities/5', expect.objectContaining({
             method: 'DELETE',
-            credentials: 'include',
         }));
     });
 });

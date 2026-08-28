@@ -16,6 +16,4 @@ docker run -d \
   -p 80:5000 \
   -v /opt/populate/data:/data \
   -e ANTHROPIC_API_KEY="${anthropic_api_key}" \
-  -e SECRET_KEY="${secret_key}" \
-  -e APP_PASSWORD="${app_password}" \
   ${image}

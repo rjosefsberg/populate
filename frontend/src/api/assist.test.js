@@ -19,7 +19,6 @@ describe('chatWithAssistant', () => {
 
         expect(fetch).toHaveBeenCalledWith('/api/assist/chat', expect.objectContaining({
             method: 'POST',
-            credentials: 'include',
         }));
         const body = JSON.parse(fetch.mock.calls[0][1].body);
         expect(body).toEqual({ entity_type: 'person', messages });

@@ -48,13 +48,3 @@ def clean_settings(app):
     path.unlink(missing_ok=True)
     yield
     path.unlink(missing_ok=True)
-
-
-@pytest.fixture(scope="function")
-def auth_client(app, db):
-    """Test client with an active session."""
-    c = app.test_client()
-    c.post("/api/auth/login",
-           json={"username": "anyone", "password": "test-password"},
-           content_type="application/json")
-    return c

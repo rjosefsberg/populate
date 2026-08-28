@@ -4,13 +4,13 @@ from app.services.entity_service import EntityService
 from app.services.attachment_service import AttachmentService
 
 
-def test_upload_download_delete_round_trip(auth_client, db, project):
+def test_upload_download_delete_round_trip(client, db, project):
     """Integration: the full attachment lifecycle through the real routes."""
-    entity = auth_client.post("/api/entities", json={
+    entity = client.post("/api/entities", json={
         "title": "Gandalf", "body": "A wizard.", "entity_type": "person", "project_id": project.id,
     }).get_json()
 
-    upload = auth_client.post(
+    upload = client.post(
         f"/api/entities/{entity['id']}/attachments",
         data={"file": (io.BytesIO(b"hello world"), "notes.txt")},
         content_type="multipart/form-data",
@@ -20,13 +20,13 @@ def test_upload_download_delete_round_trip(auth_client, db, project):
     assert attachment["filename"] == "notes.txt"
     assert attachment["size_bytes"] == len(b"hello world")
 
-    download = auth_client.get(f"/api/attachments/{attachment['id']}/download")
+    download = client.get(f"/api/attachments/{attachment['id']}/download")
     assert download.status_code == 200
     assert download.data == b"hello world"
 
-    delete = auth_client.delete(f"/api/attachments/{attachment['id']}")
+    delete = client.delete(f"/api/attachments/{attachment['id']}")
     assert delete.status_code == 200
-    assert auth_client.get(f"/api/attachments/{attachment['id']}/download").status_code == 404
+    assert client.get(f"/api/attachments/{attachment['id']}/download").status_code == 404
 
 
 def test_deleting_entity_removes_attachment_files_from_disk(app, db, project):

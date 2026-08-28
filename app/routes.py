@@ -4,18 +4,15 @@ from app.utils.sanitize import (
     clean_text, clean_prompt_text, clean_html_body, clean_chat_messages, clean_context_entities,
     LIMITS, MAX_ATTACHMENT_SIZE,
 )
-from app.auth import require_auth
 
 
 def register_routes(app):
     @app.route("/api/projects", methods=["GET"])
-    @require_auth
     def get_projects():
         from app.services.project_service import ProjectService
         return jsonify(ProjectService.get_all())
 
     @app.route("/api/projects", methods=["POST"])
-    @require_auth
     def create_project():
         from app.services.project_service import ProjectService
         data = request.get_json()
@@ -27,7 +24,6 @@ def register_routes(app):
         return jsonify(project), 201
 
     @app.route("/api/projects/<int:project_id>", methods=["PUT"])
-    @require_auth
     def update_project(project_id):
         from app.services.project_service import ProjectService
         data = request.get_json()
@@ -42,21 +38,18 @@ def register_routes(app):
         return jsonify(project), 200
 
     @app.route("/api/projects/<int:project_id>", methods=["DELETE"])
-    @require_auth
     def delete_project(project_id):
         from app.services.project_service import ProjectService
         ProjectService.delete(project_id)
         return jsonify({"message": "Project deleted"}), 200
 
     @app.route("/api/entities", methods=["GET"])
-    @require_auth
     def get_entities():
         from app.services.entity_service import EntityService
         project_id = request.args.get("project_id", type=int)
         return jsonify(EntityService.get_all(project_id))
 
     @app.route("/api/assist/chat", methods=["POST"])
-    @require_auth
     def assist_chat():
         from app.services.assist_service import AssistService
         data = request.get_json()
@@ -86,13 +79,11 @@ def register_routes(app):
         return jsonify({"reply": reply}), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["GET"])
-    @require_auth
     def get_entity(entity_id):
         from app.services.entity_service import EntityService
         return jsonify(EntityService.get_by_id(entity_id))
 
     @app.route("/api/entities", methods=["POST"])
-    @require_auth
     def create_entity():
         from app.services.entity_service import EntityService
         data = request.get_json()
@@ -120,7 +111,6 @@ def register_routes(app):
         return jsonify(entity), 201
 
     @app.route("/api/entities/<int:entity_id>", methods=["PUT"])
-    @require_auth
     def update_entity(entity_id):
         from app.services.entity_service import EntityService
         data = request.get_json()
@@ -142,14 +132,12 @@ def register_routes(app):
         return jsonify(entity), 200
 
     @app.route("/api/entities/<int:entity_id>", methods=["DELETE"])
-    @require_auth
     def delete_entity(entity_id):
         from app.services.entity_service import EntityService
         EntityService.delete(entity_id)
         return jsonify({"message": "Entity deleted"}), 200
 
     @app.route("/api/entities/<int:entity_id>/attachments", methods=["POST"])
-    @require_auth
     def upload_attachment(entity_id):
         from app.services.attachment_service import AttachmentService
         file_storage = request.files.get("file")
@@ -168,7 +156,6 @@ def register_routes(app):
         return jsonify(attachment), 201
 
     @app.route("/api/attachments/<int:attachment_id>/download", methods=["GET"])
-    @require_auth
     def download_attachment(attachment_id):
         import io
         from app.services.attachment_service import AttachmentService
@@ -185,26 +172,22 @@ def register_routes(app):
         )
 
     @app.route("/api/attachments/<int:attachment_id>", methods=["DELETE"])
-    @require_auth
     def delete_attachment(attachment_id):
         from app.services.attachment_service import AttachmentService
         AttachmentService.delete(attachment_id)
         return jsonify({"message": "Attachment deleted"}), 200
 
     @app.route("/api/entities/<int:entity_id>/associations", methods=["GET"])
-    @require_auth
     def get_associations(entity_id):
         from app.services.association_service import AssociationService
         return jsonify(AssociationService.get_for_entity(entity_id))
 
     @app.route("/api/projects/<int:project_id>/associations", methods=["GET"])
-    @require_auth
     def get_project_associations(project_id):
         from app.services.association_service import AssociationService
         return jsonify(AssociationService.get_for_project(project_id))
 
     @app.route("/api/associations", methods=["POST"])
-    @require_auth
     def create_association():
         from app.services.association_service import AssociationService
         data = request.get_json()
@@ -228,20 +211,17 @@ def register_routes(app):
         return jsonify(assoc), 201
 
     @app.route("/api/associations/<int:association_id>", methods=["DELETE"])
-    @require_auth
     def delete_association(association_id):
         from app.services.association_service import AssociationService
         AssociationService.delete(association_id)
         return jsonify({"message": "Association deleted"}), 200
 
     @app.route("/api/settings", methods=["GET"])
-    @require_auth
     def get_settings():
         from app.services.settings_service import SettingsService
         return jsonify(SettingsService.get_all())
 
     @app.route("/api/settings/<key>", methods=["PUT"])
-    @require_auth
     def update_setting(key):
         from app.services.settings_service import SettingsService
         data = request.get_json()
@@ -254,13 +234,11 @@ def register_routes(app):
         return jsonify(result), 200
 
     @app.route("/api/settings/check-key", methods=["POST"])
-    @require_auth
     def check_settings_key():
         from app.services.settings_service import SettingsService
         return jsonify(SettingsService.check_key()), 200
 
     @app.route("/api/usage", methods=["GET"])
-    @require_auth
     def get_usage():
         import logging
         log = logging.getLogger(__name__)
